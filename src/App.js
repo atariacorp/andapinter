@@ -93,7 +93,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyCkv4qPS4mcZcg7c14_a5CE9PRr4l7nJrQ",
   authDomain: "siska-pemko-medan.firebaseapp.com",
   projectId: "siska-pemko-medan",
-  storageBucket: "siska-pemko-medan.appspot.com",
+  storageBucket: "siska-pemko-medan.firebasestorage.app", // <-- SUDAH DIUBAH
   messagingSenderId: "918892241989",
   appId: "1:918892241989:web:b203674969f9caa3fa6f2c",
   measurementId: "G-SYCYLPQE48"
@@ -107,11 +107,16 @@ const appId = 'andapinter-bkad-medan';
 const storage = getStorage(app);
 // ===== AKHIR INISIALISASI STORAGE =====
 
-// ===== DETEKSI ENVIRONMENT =====
+// ===== DETEKSI ENVIRONMENT (VERSI LENGKAP) =====
 const IS_CANVAS = window.location.hostname.includes('scf.usercontent.goog') || 
-                  window.location.hostname.includes('canvas');
+                  window.location.hostname.includes('canvas') ||
+                  window.location.hostname.includes('usercontent.goog') ||
+                  window.location.hostname.includes('googleusercontent');
 
-console.log("📍 Environment:", IS_CANVAS ? "CANVAS" : "PRODUCTION");
+console.log("📍 Environment:", {
+  isCanvas: IS_CANVAS,
+  hostname: window.location.hostname
+});
 // ===== AKHIR DETEKSI =====
 
 // --- Global Helper Components ---
@@ -379,10 +384,12 @@ useEffect(() => {
        setCurrentUserProfile({ nama: email.split('@')[0] || 'Guest', level: 'Viewer', skpdId: '' });
     }
     
-    // ===== TAMBAHKAN BARIS INI =====
-    // Pastikan folder proposals ada (untuk user yang sudah login)
-    ensureProposalsFolder();
-    // ===== AKHIR PENAMBAHAN =====
+// ===== TAMBAHKAN BARIS INI DENGAN CEK CANVAS =====
+// Pastikan folder proposals ada (untuk user yang sudah login) - SKIP DI CANVAS
+if (!IS_CANVAS) {
+  ensureProposalsFolder();
+}
+// ===== AKHIR PENAMBAHAN =====
   }
 }, [user, usersList]);
 
@@ -721,17 +728,52 @@ const removeRealTimeNotification = (id) => {
 // ===== HANDLER UPLOAD PDF (VERSI BARU DENGAN STORAGE) =====
 const handlePdfUpload = async (e) => {
   const file = e.target.files[0];
-  if (!file) return;
+  if (!file) {
+    console.log("❌ Tidak ada file dipilih");
+    return;
+  }
+
+  console.log("📁 File dipilih:", {
+    name: file.name,
+    type: file.type,
+    size: (file.size / 1024).toFixed(2) + " KB",
+    environment: IS_CANVAS ? "CANVAS" : "PRODUCTION"
+  });
+
+  // Validasi tipe file
+  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+  if (!allowedTypes.includes(file.type)) {
+    console.log("❌ Tipe file tidak diizinkan:", file.type);
+    addNotification(`Tipe file ${file.type} tidak diizinkan. Gunakan PDF/JPG/PNG.`, "error");
+    e.target.value = null;
+    return;
+  }
+
+  // Validasi ukuran (2MB)
+  const maxSize = 2 * 1024 * 1024;
+  if (file.size > maxSize) {
+    console.log("❌ File terlalu besar:", file.size);
+    addNotification(`File terlalu besar (${(file.size/1024/1024).toFixed(2)}MB). Maksimal 2MB.`, "error");
+    e.target.value = null;
+    return;
+  }
 
   const proposalId = proposalForm.id || 'draft';
   
-  const result = await handleFileUploadToStorage(file, proposalId);
-  
-  if (result) {
-    setProposalForm(prev => ({
-      ...prev,
-      lampiran: result
-    }));
+  try {
+    addNotification("Mengupload file...", "info");
+    const result = await handleFileUploadToStorage(file, proposalId);
+    
+    if (result) {
+      console.log("✅ Upload berhasil:", result);
+      setProposalForm(prev => ({
+        ...prev,
+        lampiran: result
+      }));
+    }
+  } catch (error) {
+    console.error("❌ Error upload:", error);
+    addNotification(`Error: ${error.message}`, "error");
   }
   
   e.target.value = null;
@@ -1408,6 +1450,12 @@ const checkStorageUsage = async () => {
 
 // ===== FUNGSI CEK KONEKSI FIREBASE =====
 const checkFirebaseConnection = async () => {
+  // CEK CANVAS DI PALING ATAS!
+  if (IS_CANVAS) {
+    console.log("📌 Mode Canvas: Bypass storage check");
+    return true;
+  }
+  
   try {
     // Coba list dulu tanpa upload file test
     const testRef = ref(storage, 'proposals');
@@ -1418,18 +1466,16 @@ const checkFirebaseConnection = async () => {
       return null;
     });
     
-    if (IS_CANVAS) {
-    console.log("📌 Mode Canvas: Bypass storage check");
-    return true;
-  }
+    if (result !== null) {
+      console.log("✅ Firebase connection OK (via listAll)");
+      return true;
+    }
     
-    // Jika list gagal, coba metode alternatif
-    console.warn("ListAll gagal, coba buat folder test...");
-    return true; // Anggap sukses dulu, biarkan upload yang menentukan
+    console.warn("ListAll gagal, tapi akan coba upload langsung");
+    return true;
     
   } catch (error) {
     console.error("❌ Firebase connection failed:", error);
-    // Jangan blokir upload, tetap return true agar proses lanjut
     return true;
   }
 };
@@ -1490,18 +1536,30 @@ const compressImage = async (file, maxSizeMB = 2) => {
 const backupAllFiles = async () => {
   if (!user) return;
   
+  // CEK CANVAS
+  if (IS_CANVAS) {
+    addNotification("Fitur backup tidak tersedia di mode Canvas", "warning");
+    return;
+  }
+  
   // ===== CEK KONEKSI FIREBASE =====
-  const isConnected = await checkFirebaseConnection();
-  if (!isConnected) {
-    addNotification("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.", "error");
+  try {
+    const isConnected = await checkFirebaseConnection();
+    if (!isConnected) {
+      addNotification("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.", "error");
+      return;
+    }
+  } catch (connError) {
+    console.warn("Error koneksi:", connError);
+    addNotification("Koneksi tidak stabil, coba lagi nanti", "warning");
     return;
   }
   // ===== AKHIR CEK KONEKSI =====
   
-  if (!window.confirm('Proses backup akan mendownload semua file. Lanjutkan?')) return;
+  if (!window.confirm('Proses backup akan mendownload daftar file (bukan file aslinya). Lanjutkan?')) return;
   
   setBackupLoading(true);
-  addNotification("Menyiapkan file backup...", "info");
+  addNotification("Menyiapkan daftar file backup...", "info");
   
   try {
     // List semua file
@@ -1509,22 +1567,29 @@ const backupAllFiles = async () => {
     const allFiles = [];
     
     const collectFiles = async (folderRef) => {
-      const list = await listAll(folderRef);
-      
-      for (const item of list.items) {
-        const url = await getDownloadURL(item);
-        const metadata = await getMetadata(item);
-        allFiles.push({
-          name: item.name,
-          path: item.fullPath,
-          url,
-          size: metadata.size,
-          time: metadata.timeCreated
-        });
-      }
-      
-      for (const subFolder of list.prefixes) {
-        await collectFiles(subFolder);
+      try {
+        const list = await listAll(folderRef);
+        
+        for (const item of list.items) {
+          try {
+            const metadata = await getMetadata(item);
+            allFiles.push({
+              name: item.name,
+              path: item.fullPath,
+              size: metadata.size,
+              time: metadata.timeCreated,
+              type: metadata.contentType
+            });
+          } catch (itemError) {
+            console.warn("Gagal baca metadata:", item.fullPath, itemError);
+          }
+        }
+        
+        for (const subFolder of list.prefixes) {
+          await collectFiles(subFolder);
+        }
+      } catch (folderError) {
+        console.warn("Gagal akses folder:", folderRef, folderError);
       }
     };
     
@@ -1535,6 +1600,7 @@ const backupAllFiles = async () => {
       generatedAt: new Date().toISOString(),
       totalFiles: allFiles.length,
       totalSize: allFiles.reduce((sum, f) => sum + f.size, 0),
+      appId: appId,
       files: allFiles
     };
     
@@ -1542,10 +1608,11 @@ const backupAllFiles = async () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `backup-filelist-${new Date().toISOString().slice(0,10)}.json`;
+    a.download = `backup-andapinter-${new Date().toISOString().slice(0,10)}.json`;
     a.click();
+    URL.revokeObjectURL(url);
     
-    addNotification(`Daftar ${allFiles.length} file siap.`, "success");
+    addNotification(`Daftar ${allFiles.length} file berhasil didownload.`, "success");
     
   } catch (error) {
     console.error("Backup error:", error);
@@ -1703,6 +1770,12 @@ const processRestore = async () => {
 
 // ===== FUNGSI UNTUK MEMASTIKAN FOLDER PROPOSALS ADA =====
 const ensureProposalsFolder = async () => {
+  // CEK CANVAS DI PALING ATAS
+  if (IS_CANVAS) {
+    console.log("📌 Mode Canvas: Skip ensureProposalsFolder");
+    return true;
+  }
+  
   try {
     // Coba buat file .keep di folder proposals
     const proposalsRef = ref(storage, 'proposals/.keep');
@@ -3141,7 +3214,15 @@ useEffect(() => {
                                     ? 'border-green-300 dark:border-green-800 bg-green-50/30 dark:bg-green-900/10' 
                                     : 'border-blue-300 dark:border-blue-800 hover:border-blue-500 dark:hover:border-blue-500'
                                 }`}>
-                                  
+
+                                 {!uploadingFile && !proposalForm.lampiran && (
+  <div className="mt-2 text-center">
+    <p className="text-[8px] text-slate-400 dark:text-slate-500">
+      File akan disimpan di Firebase Storage dan bisa diakses melalui link
+    </p>
+  </div>
+)}
+
                                   {uploadingFile ? (
                                     // Progress Upload
                                     <div className="w-full text-center">
@@ -3157,35 +3238,57 @@ useEffect(() => {
                                       </div>
                                     </div>
                                   ) : proposalForm.lampiran ? (
-                                    // File sudah terupload
-                                    <div className="w-full text-center">
-                                      <FileCheck size={32} className="mx-auto mb-2 text-green-500" />
-                                      <p className="text-xs font-bold text-green-600 dark:text-green-400 mb-1 truncate max-w-full">
-                                        {proposalForm.lampiran.name}
-                                      </p>
-                                      <p className="text-[9px] text-slate-500 dark:text-slate-400 mb-3">
-                                        {(proposalForm.lampiran.size / 1024).toFixed(1)} KB • 
-                                        {new Date(proposalForm.lampiran.uploadedAt).toLocaleDateString('id-ID')}
-                                      </p>
-                                      <div className="flex gap-2 justify-center">
-                                        <a 
-                                          href={proposalForm.lampiran.url} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-[9px] font-black uppercase flex items-center gap-1"
-                                        >
-                                          <Download size={12} /> LIHAT
-                                        </a>
-                                        <button
-                                          type="button"
-                                          onClick={() => setProposalForm({...proposalForm, lampiran: null})}
-                                          className="px-3 py-1.5 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 rounded-lg text-[9px] font-black uppercase flex items-center gap-1"
-                                        >
-                                          <Trash2 size={12} /> HAPUS
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ) : (
+  // File sudah terupload
+  <div className="w-full text-center">
+    {/* ===== INDIKATOR JENIS FILE ===== */}
+    <div className="flex items-center justify-between w-full mb-3">
+      <span className={`text-[8px] px-3 py-1 rounded-full font-black uppercase tracking-wider ${
+        proposalForm.lampiran.type === 'application/pdf' 
+          ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800' 
+          : proposalForm.lampiran.type?.startsWith('image/')
+            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800'
+            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
+      }`}>
+        {proposalForm.lampiran.type === 'application/pdf' ? '📄 PDF' : 
+         proposalForm.lampiran.type?.startsWith('image/') ? '🖼️ GAMBAR' : 
+         '📎 FILE'}
+      </span>
+      <span className="text-[8px] text-slate-400 dark:text-slate-500">
+        {(proposalForm.lampiran.size / 1024).toFixed(1)} KB
+      </span>
+    </div>
+    {/* ===== AKHIR INDIKATOR ===== */}
+    
+    <FileCheck size={32} className="mx-auto mb-2 text-green-500" />
+    <p className="text-xs font-bold text-green-600 dark:text-green-400 mb-1 truncate max-w-full">
+      {proposalForm.lampiran.name}
+    </p>
+    <p className="text-[9px] text-slate-500 dark:text-slate-400 mb-3">
+      {new Date(proposalForm.lampiran.uploadedAt).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      })}
+    </p>
+    <div className="flex gap-2 justify-center">
+      <a 
+        href={proposalForm.lampiran.url} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+      >
+        <Download size={12} /> LIHAT
+      </a>
+      <button
+        type="button"
+        onClick={() => setProposalForm({...proposalForm, lampiran: null})}
+        className="px-3 py-1.5 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 hover:bg-rose-200 dark:hover:bg-rose-800 transition-colors"
+      >
+        <Trash2 size={12} /> HAPUS
+      </button>
+    </div>
+  </div>
+) : (
                                     // Belum ada file
                                     <>
                                       <Upload size={32} className="mx-auto mb-2 text-blue-400" />
@@ -3764,7 +3867,44 @@ useEffect(() => {
                                 </div>
                               )}
                               {/* ===== AKHIR BANK CATATAN ===== */}
-                              
+
+                              {/* Tampilkan Lampiran di Mode Detail */}
+{selectedProposal.lampiran && (
+  <div className="col-span-full pt-4 border-t border-slate-100 dark:border-slate-700">
+    <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase mb-2">
+      <Paperclip size={14} className="inline mr-1" /> DOKUMEN LAMPIRAN
+    </h4>
+    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <FileText size={24} className="text-blue-600 dark:text-blue-400" />
+          <div>
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              {selectedProposal.lampiran.name || 'File Lampiran'}
+            </p>
+            <p className="text-[9px] text-slate-500 dark:text-slate-400">
+              {selectedProposal.lampiran.size ? 
+                `${(selectedProposal.lampiran.size / 1024).toFixed(1)} KB` : 
+                'Ukuran tidak diketahui'} • 
+              {selectedProposal.lampiran.uploadedAt ? 
+                new Date(selectedProposal.lampiran.uploadedAt).toLocaleDateString('id-ID') : 
+                'Tanggal tidak diketahui'}
+            </p>
+          </div>
+        </div>
+        <a 
+          href={selectedProposal.lampiran.url} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-colors"
+        >
+          <Download size={14} /> BUKA LAMPIRAN
+        </a>
+      </div>
+    </div>
+  </div>
+)}
+
                                <textarea rows="4" value={localCatatan} onChange={e => setLocalCatatan(e.target.value)} placeholder="Masukkan catatan analisa teknis untuk SKPD..." className="w-full p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
                                <button disabled={isProcessing} onClick={() => {
                                  if(selectedProposal?.id) {
