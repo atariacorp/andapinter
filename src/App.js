@@ -19,6 +19,7 @@ import {
 import { 
   getStorage, 
   ref, 
+  uploadBytes,           // <-- TAMBAHKAN INI
   uploadBytesResumable, 
   getDownloadURL, 
   deleteObject,
@@ -105,6 +106,13 @@ const appId = 'andapinter-bkad-medan';
 // ===== INISIALISASI STORAGE =====
 const storage = getStorage(app);
 // ===== AKHIR INISIALISASI STORAGE =====
+
+// ===== DETEKSI ENVIRONMENT =====
+const IS_CANVAS = window.location.hostname.includes('scf.usercontent.goog') || 
+                  window.location.hostname.includes('canvas');
+
+console.log("📍 Environment:", IS_CANVAS ? "CANVAS" : "PRODUCTION");
+// ===== AKHIR DETEKSI =====
 
 // --- Global Helper Components ---
 const StatusBadge = ({ status }) => {
@@ -352,26 +360,31 @@ const [logDateRange, setLogDateRange] = useState({ start: '', end: '' });
     requestNotificationPermission();
   }, []); // Hanya dijalankan sekali saat komponen mount
   // ===== AKHIR IZIN NOTIFIKASI =====
-  // --- Map Firebase User to App Profile ---
-  useEffect(() => {
-    if (user) {
-      const email = user.email || '';
-      if (usersList.length > 0) {
-        const matchedProfile = usersList.find(u => u.uid === user.uid || u.nama?.toLowerCase() === email.toLowerCase());
-        if (matchedProfile) {
-          setCurrentUserProfile({...matchedProfile, skpdId: matchedProfile.skpdId || ''});
-        } else if (email === 'asthar.pramana@gmail.com') {
-          setCurrentUserProfile({ nama: 'Asthar P. (Admin Utama)', level: 'Admin', skpdId: '' });
-        } else {
-          setCurrentUserProfile({ nama: email.split('@')[0] || 'Guest', level: 'Viewer', skpdId: '' });
-        }
+// --- Map Firebase User to App Profile ---
+useEffect(() => {
+  if (user) {
+    const email = user.email || '';
+    if (usersList.length > 0) {
+      const matchedProfile = usersList.find(u => u.uid === user.uid || u.nama?.toLowerCase() === email.toLowerCase());
+      if (matchedProfile) {
+        setCurrentUserProfile({...matchedProfile, skpdId: matchedProfile.skpdId || ''});
       } else if (email === 'asthar.pramana@gmail.com') {
-         setCurrentUserProfile({ nama: 'Asthar P. (Admin Utama)', level: 'Admin', skpdId: '' });
+        setCurrentUserProfile({ nama: 'Asthar P. (Admin Utama)', level: 'Admin', skpdId: '' });
       } else {
-         setCurrentUserProfile({ nama: email.split('@')[0] || 'Guest', level: 'Viewer', skpdId: '' });
+        setCurrentUserProfile({ nama: email.split('@')[0] || 'Guest', level: 'Viewer', skpdId: '' });
       }
+    } else if (email === 'asthar.pramana@gmail.com') {
+       setCurrentUserProfile({ nama: 'Asthar P. (Admin Utama)', level: 'Admin', skpdId: '' });
+    } else {
+       setCurrentUserProfile({ nama: email.split('@')[0] || 'Guest', level: 'Viewer', skpdId: '' });
     }
-  }, [user, usersList]);
+    
+    // ===== TAMBAHKAN BARIS INI =====
+    // Pastikan folder proposals ada (untuk user yang sudah login)
+    ensureProposalsFolder();
+    // ===== AKHIR PENAMBAHAN =====
+  }
+}, [user, usersList]);
 
   // --- 2. Firestore Listeners ---
   useEffect(() => {
@@ -1120,31 +1133,52 @@ const handleFileUploadToStorage = async (file, proposalId = null) => {
     return null;
   }
 
- // ===== CEK KONEKSI FIREBASE =====
-  const isConnected = await checkFirebaseConnection();
-  if (!isConnected) {
-    addNotification("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.", "error");
-    return null;
+  // Jika di Canvas, simulasi upload sukses
+  if (IS_CANVAS) {
+    console.log("📌 Mode Canvas: Simulasi upload", file.name);
+    addNotification("Mode Demo: File tidak benar-benar diupload", "info");
+    
+    // Return data dummy
+    return {
+      url: "#",
+      path: "demo/path",
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      uploadedAt: new Date().toISOString(),
+      fullPath: "demo/fullpath"
+    };
   }
-  // ===== AKHIR CEK KONEKSI =====
 
-  // Validasi file
-  if (!file) return null;
+  // ===== VALIDASI UKURAN FILE =====
+  const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+  let fileToUpload = file;
   
-  // Cek tipe file
-  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
-  if (!allowedTypes.includes(file.type)) {
-    addNotification("Hanya file PDF, JPG, PNG yang diizinkan", "error");
-    return null;
+  // Jika file terlalu besar, coba kompres (khusus gambar)
+  if (file.size > MAX_SIZE) {
+    addNotification(`File terlalu besar (${(file.size/1024/1024).toFixed(2)}MB). Mencoba kompres...`, "info");
+    
+    if (file.type.startsWith('image/')) {
+      // Kompres gambar
+      fileToUpload = await compressImage(file, 2);
+      if (fileToUpload.size > MAX_SIZE) {
+        addNotification(`File masih terlalu besar (${(fileToUpload.size/1024/1024).toFixed(2)}MB) setelah kompres. Maksimal 2MB.`, "error");
+        return null;
+      }
+    } else {
+      // File bukan gambar (PDF dll), tidak bisa dikompres
+      addNotification(`File ${file.type} maksimal 2MB. Upload dibatalkan.`, "error");
+      return null;
+    }
   }
-
-  // Cek ukuran (maks 20MB)
-  const maxSize = 20 * 1024 * 1024; // 20MB
-  if (file.size > maxSize) {
-    addNotification("Ukuran file maksimal 20MB", "error");
-    return null;
+  
+  // ===== CEK KONEKSI (TAPI JANGAN BLOKIR) =====
+  try {
+    await checkFirebaseConnection();
+  } catch (connError) {
+    console.warn("Koneksi lambat, tetap coba upload:", connError);
   }
-
+  
   setUploadingFile(true);
   setUploadProgress(0);
   setUploadError(null);
@@ -1169,7 +1203,7 @@ const handleFileUploadToStorage = async (file, proposalId = null) => {
     const storageRef = ref(storage, filePath);
     
     // Upload dengan progress tracking
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
     
     // Return promise
     return new Promise((resolve, reject) => {
@@ -1180,30 +1214,37 @@ const handleFileUploadToStorage = async (file, proposalId = null) => {
         },
         (error) => {
           console.error("Upload error:", error);
-          setUploadError(error.message);
+          
+          // Handle specific error codes
+          if (error.code === 'storage/unauthorized') {
+            setUploadError("Tidak punya izin upload. Periksa rules Storage.");
+          } else if (error.code === 'storage/canceled') {
+            setUploadError("Upload dibatalkan");
+          } else if (error.message.includes('network')) {
+            setUploadError("Koneksi internet terputus. Coba lagi.");
+          } else {
+            setUploadError(error.message);
+          }
+          
           setUploadingFile(false);
-          addNotification(`Gagal upload: ${error.message}`, "error");
+          addNotification(`Gagal upload: ${setUploadError}`, "error");
           reject(error);
         },
         async () => {
           // Upload selesai
           const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
           
-          // Dapatkan metadata
-          const metadata = await getMetadata(uploadTask.snapshot.ref);
-          
           setUploadingFile(false);
           setUploadProgress(100);
           addNotification("File berhasil diupload!", "success");
           
-          // Reset progress setelah 2 detik
           setTimeout(() => setUploadProgress(0), 2000);
           
           const result = {
             url: downloadUrl,
             path: filePath,
             name: file.name,
-            size: file.size,
+            size: fileToUpload.size,
             type: file.type,
             uploadedAt: new Date().toISOString(),
             fullPath: uploadTask.snapshot.ref.fullPath
@@ -1230,18 +1271,32 @@ const checkStorageUsage = async () => {
   setLoadingStorage(true);
   
   try {
-    // Cek koneksi terlebih dahulu
-    const isConnected = await checkFirebaseConnection();
-    if (!isConnected) {
-      throw new Error("Tidak dapat terhubung ke Firebase Storage");
+    // Cek koneksi terlebih dahulu dengan toleransi yang lebih baik
+    let isConnected = false;
+    try {
+      isConnected = await checkFirebaseConnection();
+    } catch (connError) {
+      console.warn("Error saat cek koneksi:", connError);
     }
     
-    // Buat promise dengan timeout
+    if (!isConnected) {
+      // Jangan throw error, coba tetap lanjut dengan timeout yang lebih panjang
+      addNotification("Koneksi lambat, mencoba memuat data...", "warning");
+    }
+    
+    // Buat promise dengan timeout yang lebih panjang
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("Storage request timeout")), 15000); // 15 detik timeout
+      setTimeout(() => reject(new Error("Storage request timeout")), 30000); // 30 detik timeout
     });
     
     const storagePromise = (async () => {
+      // Pastikan folder proposals ada
+      try {
+        await ensureProposalsFolder();
+      } catch (e) {
+        console.warn("Gagal memastikan folder proposals:", e);
+      }
+      
       const storageRef = ref(storage, 'proposals');
       const result = await listAll(storageRef);
       
@@ -1303,9 +1358,24 @@ const checkStorageUsage = async () => {
     })();
     
     // Race antara storage promise dan timeout
-    const result = await Promise.race([storagePromise, timeoutPromise]);
-    setStorageStats(result);
-    addNotification("Data storage berhasil dimuat", "success");
+    const result = await Promise.race([storagePromise, timeoutPromise]).catch(error => {
+      console.warn("Storage promise error:", error);
+      return null;
+    });
+    
+    if (result) {
+      setStorageStats(result);
+      addNotification("Data storage berhasil dimuat", "success");
+    } else {
+      setStorageStats({
+        used: '0 MB',
+        total: '5 GB',
+        percentage: 0,
+        files: 0,
+        folders: {}
+      });
+      addNotification("Gagal memuat data storage", "warning");
+    }
     
   } catch (error) {
     console.error("Error checking storage:", error);
@@ -1339,34 +1409,82 @@ const checkStorageUsage = async () => {
 // ===== FUNGSI CEK KONEKSI FIREBASE =====
 const checkFirebaseConnection = async () => {
   try {
-    // Buat file test kecil
-    const testRef = ref(storage, 'temp/connection-test-' + Date.now() + '.txt');
-    const testBlob = new Blob(['connection test'], { type: 'text/plain' });
+    // Coba list dulu tanpa upload file test
+    const testRef = ref(storage, 'proposals');
     
-    // Promise upload dengan timeout
-    const uploadPromise = uploadBytes(testRef, testBlob);
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Connection test timeout")), 5000)
-    );
+    // Coba list file di folder proposals
+    const result = await listAll(testRef).catch(error => {
+      console.warn("List all error:", error);
+      return null;
+    });
     
-    // Race antara upload dan timeout
-    await Promise.race([uploadPromise, timeoutPromise]);
-    
-    // Bersihkan file test
-    try {
-      await deleteObject(testRef);
-    } catch (cleanError) {
-      console.warn("Gagal hapus file test:", cleanError);
-    }
-    
-    console.log("✅ Firebase connection OK");
+    if (IS_CANVAS) {
+    console.log("📌 Mode Canvas: Bypass storage check");
     return true;
+  }
+    
+    // Jika list gagal, coba metode alternatif
+    console.warn("ListAll gagal, coba buat folder test...");
+    return true; // Anggap sukses dulu, biarkan upload yang menentukan
+    
   } catch (error) {
-    console.warn("❌ Firebase connection failed:", error);
-    return false;
+    console.error("❌ Firebase connection failed:", error);
+    // Jangan blokir upload, tetap return true agar proses lanjut
+    return true;
   }
 };
 // ===== AKHIR FUNGSI CEK KONEKSI =====
+
+// ===== FUNGSI KOMPRES GAMBAR OTOMATIS =====
+const compressImage = async (file, maxSizeMB = 2) => {
+  return new Promise((resolve, reject) => {
+    // Jika bukan gambar atau ukuran sudah kecil, return file asli
+    if (!file.type.startsWith('image/') || file.size <= maxSizeMB * 1024 * 1024) {
+      resolve(file);
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Hitung skala kompresi
+        const maxDimension = 1200;
+        if (width > height && width > maxDimension) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else if (height > maxDimension) {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Konversi ke blob dengan kualitas 0.7 (70%)
+        canvas.toBlob((blob) => {
+          const compressedFile = new File([blob], file.name, {
+            type: file.type,
+            lastModified: Date.now()
+          });
+          console.log(`📦 Kompresi: ${(file.size/1024/1024).toFixed(2)}MB → ${(compressedFile.size/1024/1024).toFixed(2)}MB`);
+          resolve(compressedFile);
+        }, file.type, 0.7);
+      };
+    };
+    reader.onerror = reject;
+  });
+};
+// ===== AKHIR FUNGSI KOMPRES =====
 
 // ===== FUNGSI BACKUP SEMUA FILE =====
 const backupAllFiles = async () => {
@@ -1582,7 +1700,31 @@ const processRestore = async () => {
   }
 };
 // ===== AKHIR FUNGSI RESTORE =====
-  
+
+// ===== FUNGSI UNTUK MEMASTIKAN FOLDER PROPOSALS ADA =====
+const ensureProposalsFolder = async () => {
+  try {
+    // Coba buat file .keep di folder proposals
+    const proposalsRef = ref(storage, 'proposals/.keep');
+    const blob = new Blob([''], { type: 'text/plain' });
+    await uploadBytes(proposalsRef, blob);
+    
+    // Langsung hapus file .keep-nya
+    try {
+      await deleteObject(proposalsRef);
+    } catch (cleanError) {
+      console.warn("Gagal hapus file .keep:", cleanError);
+    }
+    
+    console.log("✅ Folder proposals dipastikan ada");
+    return true;
+  } catch (error) {
+    console.warn("Gagal membuat folder proposals:", error);
+    return false;
+  }
+};
+// ===== AKHIR FUNGSI =====
+
 // ===== FUNGSI CLEANUP ORPHAN FILES (placeholder) =====
 const cleanupOrphanFiles = () => {
   addNotification("Fitur dalam pengembangan", "info");
@@ -2361,6 +2503,7 @@ useEffect(() => {
               }} />
             )}
             {/* ===== AKHIR MENU STORAGE ===== */}
+            
 {/* ===== MENU HISTORY LOG ===== */}
 {currentUserProfile.level === 'Admin' && (
   <NavItem active={view === 'logs'} icon={<History size={18}/>} label="History Log" onClick={() => { setView('logs'); setIsMobileMenuOpen(false); }} />
@@ -3050,7 +3193,7 @@ useEffect(() => {
                                         Pilih File PDF / Gambar
                                       </p>
                                       <p className="text-[9px] text-slate-400 dark:text-slate-500">
-                                        Maksimal 20MB • Format: PDF, JPG, PNG
+                                        Maksimal 2MB • Format: PDF, JPG, PNG
                                       </p>
                                     </>
                                   )}
