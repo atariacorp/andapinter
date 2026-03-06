@@ -3,13 +3,16 @@ import React from 'react';
 const NavItem = ({ active, icon, label, onClick }) => (
   <button 
     onClick={onClick} 
-    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all font-bold text-sm uppercase tracking-tighter ${
+    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 font-bold text-sm uppercase tracking-tighter group ${
       active 
-        ? 'bg-blue-600 text-white shadow-xl translate-x-1' 
-        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-800 hover:text-slate-200 dark:hover:bg-slate-800/50'
+        ? 'bg-gradient-to-r from-[#b87e4f] to-[#9a6942] text-white shadow-lg shadow-[#b87e4f]/30 translate-x-1' 
+        : 'text-[#e6c3a0]/80 hover:text-white hover:bg-[#7b5435]/50'
     }`}
   >
-    {icon} {String(label)}
+    <span className={`${active ? 'text-white' : 'text-[#d7a370] group-hover:text-white'} transition-colors`}>
+      {icon}
+    </span>
+    {String(label)}
   </button>
 );
 

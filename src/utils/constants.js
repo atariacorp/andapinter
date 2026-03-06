@@ -24,6 +24,35 @@ export const DEFAULT_BRANDING = {
   logoUrl: ''
 };
 
+// Palet warna coklat modern
+export const COLOR_PALETTE = {
+  primary: {
+    50: '#faf7f2',
+    100: '#f0e9db',
+    200: '#e6d5bf',
+    300: '#d4b99b',
+    400: '#b48c5c',
+    500: '#8b6b4c',
+    600: '#6d5340',
+    700: '#4f3d2f',
+    800: '#362b21',
+    900: '#1f1812'
+  },
+  accent: {
+    sand: '#d4b99b',
+    clay: '#b48c5c',
+    earth: '#8b6b4c',
+    wood: '#6d5340'
+  }
+};
+
+// Gradient coklat
+export const BROWN_GRADIENTS = {
+  primary: 'from-[#b48c5c] to-[#8b6b4c]',
+  light: 'from-[#e6d5bf] to-[#d4b99b]',
+  dark: 'from-[#6d5340] to-[#4f3d2f]'
+};
+
 export const IS_CANVAS = window.location.hostname.includes('scf.usercontent.goog') || 
                          window.location.hostname.includes('canvas') ||
                          window.location.hostname.includes('usercontent.goog') ||

@@ -13,7 +13,8 @@ const DashboardView = ({
   setSelectedTahap, 
   selectedYear, 
   setSelectedYear,
-  setCurrentPage 
+  setCurrentPage,
+  isDarkMode  // <-- PASTIKAN INI ADA
 }) => {
   
   // Hitung statistik dashboard

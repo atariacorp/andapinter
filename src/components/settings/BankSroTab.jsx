@@ -4,7 +4,7 @@ import {
   ChevronLeft, ChevronRight, Edit3, Trash2, 
   X, CheckCircle, AlertCircle, Info 
 } from 'lucide-react';
-import { formatFileSize } from '../../utils/formatters';
+import { formatFileSize } from '../../utils';
 
 const BankSroTab = ({ 
   bankSro, 

@@ -11,9 +11,6 @@ import LogsView from '../logs/LogsView';
 import PanduanView from '../panduan/PanduanView';
 import NotificationPanel from '../common/NotificationPanel';
 import { CheckCircle, AlertTriangle, X } from 'lucide-react';
-import StorageView from '../storage/StorageView';
-import LogsView from '../logs/LogsView';
-import PanduanView from '../panduan/PanduanView';
 
 const MainLayout = ({ 
   user, 
@@ -27,7 +24,16 @@ const MainLayout = ({
   setDeleteConfirm,
   currentUserProfile,
   masterData,
-  proposals
+  proposals,
+  storage,
+  checkStorageUsage,   
+  backupAllFiles,   
+  restoreFromBackup,
+  cleanupOrphanFiles,
+  activityLogs,
+  loadingLogs,
+  refreshLogs,
+  addActivityLog    
 }) => {
   const [view, setView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -105,7 +111,7 @@ const MainLayout = ({
           toggleDarkMode={toggleDarkMode}
         />
 
-        <main className="flex-grow p-6 lg:p-8 overflow-y-auto scrollbar-hide text-left print:hidden">
+        <main className="flex-grow p-6 lg:p-8 overflow-y-auto scrollbar-hide text-left print:hidden bg-gradient-to-br from-[#faf7f2] to-[#f0e9db] dark:from-[#2c1e12] dark:to-[#1f1510]">
   
   {/* Dashboard View */}
   {view === 'dashboard' && (

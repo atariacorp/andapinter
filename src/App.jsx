@@ -6,7 +6,7 @@ import { BrandingProvider, useBranding } from './context/BrandingContext';
 import LoginScreen from './components/auth/LoginScreen';
 import MainLayout from './components/layout/MainLayout';
 import DeleteConfirmModal from './components/common/DeleteConfirmModal';
-import { IS_CANVAS } from './utils/constants';
+import { IS_CANVAS, storage } from './utils';
 
 const AppContent = () => {
   const { user, authInitialized, login, logout, loading: authLoading } = useAuth();
@@ -21,6 +21,57 @@ const AppContent = () => {
     level: 'Viewer', 
     skpdId: '' 
   });
+
+  // ===== TAMBAHKAN STATE UNTUK ACTIVITY LOGS =====
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  // ===== AKHIR TAMBAHAN =====
+  
+  // ===== FUNGSI UNTUK ACTIVITY LOGS =====
+const addActivityLog = async ({ action, category, description, dataId = null, oldData = null, newData = null }) => {
+  if (!user) return;
+  
+  try {
+    const logData = {
+      action,
+      category,
+      description,
+      userId: user.uid,
+      userName: currentUserProfile.nama || user.email || 'Unknown',
+      userLevel: currentUserProfile.level || 'Viewer',
+      timestamp: new Date().toISOString(),
+      dataId,
+      oldData: oldData ? JSON.stringify(oldData) : null,
+      newData: newData ? JSON.stringify(newData) : null
+    };
+    
+    // Simulasi dulu tanpa Firestore
+    console.log('📝 Activity Log:', logData);
+    
+    // Tambahkan ke state lokal
+    setActivityLogs(prev => [logData, ...prev].slice(0, 100)); // Simpan 100 log terbaru
+    
+    // Nanti bisa ditambahkan ke Firestore
+    // await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'activity_logs'), logData);
+    
+  } catch (err) {
+    console.error("Gagal mencatat log:", err);
+  }
+};
+
+const refreshLogs = async () => {
+  setLoadingLogs(true);
+  try {
+    // Simulasi refresh
+    console.log('Refreshing logs...');
+    // Nanti bisa diisi dengan fetch dari Firestore
+    setLoadingLogs(false);
+  } catch (err) {
+    console.error('Error refreshing logs:', err);
+    setLoadingLogs(false);
+  }
+};
+// ===== AKHIR FUNGSI LOGS =====
 
   // Load master data
   const masterData = useMasterData(user);
@@ -155,6 +206,37 @@ const AppContent = () => {
     );
   }
 
+  // ===== FUNGSI STORAGE =====
+const checkStorageUsage = async () => {
+  // Implementasi check storage
+  console.log('Checking storage usage...');
+  // Sementara return dummy dulu
+  return {
+    used: '0 MB',
+    total: '5 GB',
+    percentage: 0,
+    files: 0,
+    folders: {}
+  };
+};
+
+const backupAllFiles = async () => {
+  console.log('Backing up files...');
+  addNotification('Fitur backup dalam pengembangan', 'info');
+};
+
+const restoreFromBackup = async (file, onProgress) => {
+  console.log('Restoring from backup...', file);
+  addNotification('Fitur restore dalam pengembangan', 'info');
+};
+
+const cleanupOrphanFiles = async () => {
+  console.log('Cleaning up orphan files...');
+  addNotification('Fitur cleanup dalam pengembangan', 'info');
+};
+
+// Kirim ke MainLayout
+
   return (
     <div className={`${isDarkMode ? 'dark' : ''} print:bg-white`}>
       <MainLayout
@@ -170,6 +252,11 @@ const AppContent = () => {
         currentUserProfile={currentUserProfile}
         masterData={masterData}
         proposals={proposals}
+        storage={storage}
+        checkStorageUsage={checkStorageUsage}
+        backupAllFiles={backupAllFiles}
+        restoreFromBackup={restoreFromBackup}
+        cleanupOrphanFiles={cleanupOrphanFiles}
       />
 
       <DeleteConfirmModal

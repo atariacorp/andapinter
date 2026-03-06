@@ -7,8 +7,7 @@ import {
 import RincianSRORow from './RincianSRORow';
 import FileUploader from '../common/FileUploader';
 import BankSroModal from '../settings/BankSroModal';
-import { formatIDR, generateUniqueId } from '../../utils/helpers';
-import { IS_CANVAS } from '../../utils/constants';
+import { formatIDR, generateUniqueId, IS_CANVAS } from '../../utils';
 
 const ProposalFormView = ({
   currentUserProfile,

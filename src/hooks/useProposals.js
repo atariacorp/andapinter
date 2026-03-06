@@ -8,7 +8,7 @@ import {
   doc 
 } from 'firebase/firestore';
 import { db, appId } from '../utils/firebase';
-import { generateUniqueId } from '../utils/helpers';
+import { generateUniqueId } from '../utils';
 
 export const useProposals = (user, currentUserProfile) => {
   const [proposals, setProposals] = useState([]);
@@ -19,6 +19,7 @@ export const useProposals = (user, currentUserProfile) => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedTahap, setSelectedTahap] = useState('Semua');
   const [selectedForBulk, setSelectedForBulk] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Default form state
   const defaultProposalForm = {
@@ -68,11 +69,7 @@ export const useProposals = (user, currentUserProfile) => {
     }
   }, [proposals, selectedProposal]);
 
-  // Reset bulk selection when filters change
-  useEffect(() => {
-    setSelectedForBulk([]);
-  }, [currentPage, searchTerm, statusFilter, selectedYear, selectedTahap]);
-
+  // Filtered proposals
   const filteredProposals = useMemo(() => {
     return proposals.filter(p => {
       const searchMatch = (String(p.skpd || "")).toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -111,7 +108,7 @@ export const useProposals = (user, currentUserProfile) => {
     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'proposals', String(id)));
   };
 
-  const updateProposalStatus = async (id, status, updatedBy, oldStatus) => {
+  const updateProposalStatus = async (id, status, updatedBy) => {
     const historyEntry = {
       action: `Status diubah: ${status}`,
       by: updatedBy,
@@ -173,6 +170,8 @@ export const useProposals = (user, currentUserProfile) => {
     isEditing,
     setIsEditing,
     filteredProposals,
+    currentPage,
+    setCurrentPage,
     createProposal,
     updateProposal,
     deleteProposal,

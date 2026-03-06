@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Plus } from 'lucide-react';
+import { Users, Plus, Trash2 } from 'lucide-react';  // <-- TAMBAHKAN Trash2 DI SINI
 import MasterDataTable from '../common/MasterDataTable';
 
 const TapdTab = ({ 
@@ -112,7 +112,7 @@ const TapdTab = ({
                     onClick={() => onDelete(t)} 
                     className="text-slate-300 dark:text-slate-600 hover:text-rose-600 dark:hover:text-rose-400 p-1"
                   >
-                    <Trash2 size={16}/>
+                    <Trash2 size={16}/>  {/* <-- SEKARANG SUDAH TERDEFINISI */}
                   </button>
                 </div>
               ))

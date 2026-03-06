@@ -4,8 +4,7 @@ import {
   Trash2, AlertTriangle, CheckCircle, X, FileText,
   Calendar, FolderOpen, PieChart, BarChart2
 } from 'lucide-react';
-import { formatFileSize } from '../../utils/formatters';
-import { IS_CANVAS } from '../../utils/constants';
+import { formatFileSize, IS_CANVAS } from '../../utils';
 
 const StorageView = ({ 
   addNotification, 

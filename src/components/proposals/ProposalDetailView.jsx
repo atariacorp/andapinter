@@ -9,7 +9,7 @@ import ChatPanel from './ChatPanel';
 import HistoryTimeline from './HistoryTimeline';
 import LampiranView from './LampiranView';
 import BankCatatanPanel from './BankCatatanPanel';
-import { formatIDR } from '../../utils/formatters';
+import { formatIDR } from '../../utils';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, appId } from '../../utils/firebase';
 

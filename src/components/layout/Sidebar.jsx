@@ -10,7 +10,9 @@ import {
   Sun,
   Moon,
   LogOut,
-  X
+  X,
+  Coffee,
+  Leaf
 } from 'lucide-react';
 import NavItem from '../common/NavItem';
 
@@ -31,167 +33,216 @@ const Sidebar = ({
 }) => {
   return (
     <>
-      {/* Overlay untuk mobile */}
+      {/* Overlay untuk mobile dengan efek blur */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/60 z-40 lg:hidden backdrop-blur-sm print:hidden" 
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden" 
           onClick={() => setIsMobileMenuOpen(false)} 
         />
       )}
       
-      <aside className={`fixed inset-y-0 left-0 w-64 bg-slate-900 dark:bg-slate-950 text-slate-300 flex flex-col z-50 transition-transform lg:static lg:translate-x-0 border-r border-slate-800 dark:border-slate-800/50 print:hidden ${
+      {/* Sidebar dengan gradasi coklat */}
+      <aside className={`fixed inset-y-0 left-0 w-72 flex flex-col z-50 transition-transform lg:static lg:translate-x-0 print:hidden ${
         isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
       }`}>
         
-        {/* Header Sidebar */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {branding.logoUrl ? (
-              <img 
-                src={branding.logoUrl} 
-                alt={`${branding.name1}${branding.name2} Logo`}
-                className="w-9 h-9 object-contain rounded-xl"
-              />
-            ) : (
-              <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-500/30 uppercase">
-                {branding.icon}
+        {/* Background dengan gradasi coklat */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#3d2b1a] via-[#4f3822] to-[#2c1e12]"></div>
+        
+        {/* Pattern overlay (subtle) */}
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: `radial-gradient(circle at 20px 20px, #d7a370 2px, transparent 2px)`,
+          backgroundSize: '40px 40px'
+        }}></div>
+        
+        {/* Content dengan posisi relative agar di atas background */}
+        <div className="relative flex flex-col h-full z-10">
+          
+          {/* Header Sidebar dengan Logo */}
+          <div className="p-6 border-b border-[#d7a370]/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {/* Logo dengan efek glow */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-[#b87e4f] rounded-xl blur-md opacity-50"></div>
+                  {branding.logoUrl ? (
+                    <img 
+                      src={branding.logoUrl} 
+                      alt={`${branding.name1}${branding.name2} Logo`}
+                      className="w-10 h-10 object-contain rounded-xl relative z-10"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-gradient-to-br from-[#b87e4f] to-[#7b5435] rounded-xl flex items-center justify-center text-white font-black text-lg shadow-lg relative z-10">
+                      {branding.icon}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Nama Aplikasi dengan efek gradasi */}
+                <div>
+                  <span className="text-xl font-black tracking-tight text-white">
+                    {branding.name1}
+                  </span>
+                  <span className="text-xl font-black tracking-tight text-[#e6c3a0]">
+                    {branding.name2}
+                  </span>
+                  <p className="text-[8px] text-[#d7a370] mt-0.5 tracking-wider">
+                    {branding.tagline}
+                  </p>
+                </div>
               </div>
+              
+              {/* Tombol close mobile */}
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)} 
+                className="lg:hidden p-2 text-[#d7a370] hover:text-white hover:bg-[#7b5435]/50 rounded-lg transition-all"
+              >
+                <X size={20}/>
+              </button>
+            </div>
+          </div>
+
+          {/* Navigation Menu dengan efek hover */}
+          <nav className="p-4 space-y-1.5 flex-grow overflow-y-auto scrollbar-hide">
+            <NavItem 
+              active={view === 'dashboard'} 
+              icon={<LayoutDashboard size={18}/>} 
+              label="Dashboard" 
+              onClick={() => { 
+                setView('dashboard'); 
+                setIsMobileMenuOpen(false); 
+              }} 
+            />
+            
+            <NavItem 
+              active={view === 'list' || view === 'detail' || view === 'add-proposal'} 
+              icon={<FileText size={18}/>} 
+              label="Daftar Berkas" 
+              onClick={() => { 
+                setView('list'); 
+                setIsMobileMenuOpen(false); 
+              }} 
+            />
+            
+            <NavItem 
+              active={view === 'panduan'} 
+              icon={<BookOpen size={18}/>} 
+              label="Panduan Sistem" 
+              onClick={() => { 
+                setView('panduan'); 
+                setIsMobileMenuOpen(false); 
+              }} 
+            />
+            
+            {/* Storage Management - Hanya untuk Admin */}
+            {currentUserProfile?.level === 'Admin' && (
+              <NavItem 
+                active={view === 'storage'} 
+                icon={<Database size={18}/>} 
+                label="Manajemen Storage" 
+                onClick={() => { 
+                  setView('storage'); 
+                  setIsMobileMenuOpen(false); 
+                }} 
+              />
             )}
             
-            <span className="text-xl font-black tracking-tight text-white italic uppercase">
-              {branding.name1}<span className="text-blue-500">{branding.name2}</span>
-            </span>
-          </div>
-          <button 
-            onClick={() => setIsMobileMenuOpen(false)} 
-            className="lg:hidden p-2 text-slate-400 hover:text-white transition-colors"
-          >
-            <X size={20}/>
-          </button>
-        </div>
-
-        {/* Navigation Menu */}
-        <nav className="p-4 space-y-2 flex-grow overflow-y-auto scrollbar-hide">
-          <NavItem 
-            active={view === 'dashboard'} 
-            icon={<LayoutDashboard size={18}/>} 
-            label="Dashboard" 
-            onClick={() => { 
-              setView('dashboard'); 
-              setIsMobileMenuOpen(false); 
-            }} 
-          />
-          
-          <NavItem 
-            active={view === 'list' || view === 'detail' || view === 'add-proposal'} 
-            icon={<FileText size={18}/>} 
-            label="Daftar Berkas" 
-            onClick={() => { 
-              setView('list'); 
-              setIsMobileMenuOpen(false); 
-            }} 
-          />
-          
-          <NavItem 
-            active={view === 'panduan'} 
-            icon={<BookOpen size={18}/>} 
-            label="Panduan Sistem" 
-            onClick={() => { 
-              setView('panduan'); 
-              setIsMobileMenuOpen(false); 
-            }} 
-          />
-          
-          {/* Storage Management - Hanya untuk Admin */}
-          {currentUserProfile?.level === 'Admin' && (
-            <NavItem 
-              active={view === 'storage'} 
-              icon={<Database size={18}/>} 
-              label="Manajemen Storage" 
-              onClick={() => { 
-                setView('storage'); 
-                setIsMobileMenuOpen(false); 
-              }} 
-            />
-          )}
-          
-          {/* History Log - Hanya untuk Admin */}
-          {currentUserProfile?.level === 'Admin' && (
-            <NavItem 
-              active={view === 'logs'} 
-              icon={<History size={18}/>} 
-              label="History Log" 
-              onClick={() => { 
-                setView('logs'); 
-                setIsMobileMenuOpen(false); 
-              }} 
-            />
-          )}
-        </nav>
-
-        {/* Footer Sidebar */}
-        <div className="p-4 border-t border-slate-800 space-y-3">
-          
-          {/* Settings - Hanya untuk Admin */}
-          {currentUserProfile?.level === 'Admin' && (
-            <NavItem 
-              active={view === 'settings'} 
-              icon={<Settings size={18}/>} 
-              label="Pengaturan Master" 
-              onClick={() => { 
-                setView('settings'); 
-                setIsMobileMenuOpen(false); 
-              }} 
-            />
-          )}
-          
-          {/* Tombol Notifikasi */}
-          <button 
-            onClick={() => setShowNotificationPanel(!showNotificationPanel)}
-            className="w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors font-bold text-xs uppercase tracking-widest relative"
-          >
-            <div className="flex items-center gap-2">
-              <Bell size={16} className="text-yellow-400" />
-              <span>Notifikasi</span>
-            </div>
-            {unreadCount > 0 && (
-              <span className="bg-rose-500 text-white text-[8px] rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
+            {/* History Log - Hanya untuk Admin */}
+            {currentUserProfile?.level === 'Admin' && (
+              <NavItem 
+                active={view === 'logs'} 
+                icon={<History size={18}/>} 
+                label="History Log" 
+                onClick={() => { 
+                  setView('logs'); 
+                  setIsMobileMenuOpen(false); 
+                }} 
+              />
             )}
-          </button>
+          </nav>
 
-          {/* Dark Mode Toggle */}
-          <button 
-            onClick={toggleDarkMode} 
-            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors font-bold text-xs uppercase tracking-widest"
-          >
-            {isDarkMode ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-blue-400" />}
-            {isDarkMode ? 'Mode Terang' : 'Mode Gelap'}
-          </button>
+          {/* Footer Sidebar */}
+          <div className="relative p-4 border-t border-[#d7a370]/20 space-y-3">
+            
+            {/* Settings - Hanya untuk Admin */}
+            {currentUserProfile?.level === 'Admin' && (
+              <NavItem 
+                active={view === 'settings'} 
+                icon={<Settings size={18}/>} 
+                label="Pengaturan Master" 
+                onClick={() => { 
+                  setView('settings'); 
+                  setIsMobileMenuOpen(false); 
+                }} 
+              />
+            )}
+            
+            {/* Tombol Notifikasi dengan desain coklat */}
+            <button 
+              onClick={() => setShowNotificationPanel(!showNotificationPanel)}
+              className="w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-[#4f3822]/50 hover:bg-[#7b5435]/50 text-[#e6c3a0] hover:text-white transition-all duration-300 font-bold text-xs uppercase tracking-widest relative group"
+            >
+              <div className="flex items-center gap-2">
+                <Bell size={16} className="text-[#d7a370] group-hover:text-[#e6c3a0] transition-colors" />
+                <span>Notifikasi</span>
+              </div>
+              {unreadCount > 0 && (
+                <span className="bg-[#b87e4f] text-white text-[8px] rounded-full w-5 h-5 flex items-center justify-center animate-pulse shadow-lg">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
 
-          {/* Profile & Logout */}
-          <div className="p-4 bg-slate-800/40 dark:bg-slate-900/50 rounded-2xl text-left border border-slate-700/50 backdrop-blur-sm">
-            <div className="flex items-center gap-3 mb-3 text-white">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-[10px] font-black shadow-inner uppercase">
-                {String(currentUserProfile?.nama || "User").charAt(0)}
+            {/* Dark Mode Toggle dengan desain coklat */}
+            <button 
+              onClick={toggleDarkMode} 
+              className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-[#4f3822]/30 hover:bg-[#7b5435]/30 text-[#e6c3a0] hover:text-white transition-all duration-300 font-bold text-xs uppercase tracking-widest border border-[#d7a370]/20"
+            >
+              {isDarkMode ? (
+                <>
+                  <Sun size={16} className="text-[#d7a370]" />
+                  Mode Terang
+                </>
+              ) : (
+                <>
+                  <Moon size={16} className="text-[#d7a370]" />
+                  Mode Gelap
+                </>
+              )}
+            </button>
+
+            {/* Profile Card dengan desain coklat */}
+            <div className="p-4 bg-gradient-to-br from-[#4f3822]/80 to-[#2c1e12]/80 rounded-2xl border border-[#d7a370]/30 backdrop-blur-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#b87e4f] to-[#7b5435] flex items-center justify-center text-white font-black shadow-lg">
+                  {String(currentUserProfile?.nama || "User").charAt(0).toUpperCase()}
+                </div>
+                <div className="overflow-hidden">
+                  <p className="text-xs font-black text-white truncate leading-none mb-1">
+                    {String(currentUserProfile?.nama || "User")}
+                  </p>
+                  <p className="text-[8px] text-[#e6c3a0] font-black uppercase tracking-widest">
+                    {String(currentUserProfile?.level || "Viewer")}
+                  </p>
+                </div>
               </div>
-              <div className="overflow-hidden">
-                <p className="text-[10px] font-black truncate leading-none mb-1">
-                  {String(currentUserProfile?.nama || "User")}
-                </p>
-                <p className="text-[8px] text-emerald-400 font-black uppercase tracking-widest">
-                  {String(currentUserProfile?.level || "Viewer")}
-                </p>
-              </div>
+
+              {/* Tombol Logout */}
+              <button 
+                onClick={onLogout} 
+                className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-[#b87e4f]/20 hover:bg-[#b87e4f]/40 text-[#e6c3a0] hover:text-white transition-all duration-300 font-bold text-[10px] uppercase tracking-widest border border-[#d7a370]/30"
+              >
+                <LogOut size={14}/> Keluar Akun
+              </button>
             </div>
 
-            <button 
-              onClick={onLogout} 
-              className="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-colors font-bold text-[10px] uppercase tracking-widest"
-            >
-              <LogOut size={14}/> Keluar Akun
-            </button>
+            {/* Decorative Elements */}
+            <div className="absolute bottom-4 right-4 opacity-10 pointer-events-none">
+              <Coffee size={60} className="text-[#e6c3a0]" />
+            </div>
+            <div className="absolute top-20 left-4 opacity-10 pointer-events-none rotate-45">
+              <Leaf size={40} className="text-[#d7a370]" />
+            </div>
           </div>
         </div>
       </aside>
