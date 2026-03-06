@@ -1,1 +1,9 @@
 node_modules
+# backup files
+*.backup
+*.old
+*.bak
+*.back
+*-backup*
+*~
+/backups/
