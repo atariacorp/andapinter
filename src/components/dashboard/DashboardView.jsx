@@ -4,10 +4,11 @@ import {
   PieChart, BarChart2, CalendarDays, Layers,
   TrendingUp, Users, Award, Star, PlusCircle,
   FileText, Download, Search, CheckCircle, XCircle,
-  AlertCircle, DollarSign, Activity, Zap
+  AlertCircle, DollarSign, Activity, Zap, Shield,
+  UserCheck, UserX, Eye, EyeOff, Filter
 } from 'lucide-react';
 import CalendarView from './CalendarView';
-import ExportModal from '../common/ExportModal';  
+import ExportModal from '../common/ExportModal';
 
 const DashboardView = ({ 
   filteredProposals, 
@@ -18,16 +19,16 @@ const DashboardView = ({
   selectedYear, 
   setSelectedYear,
   setCurrentPage,
-  setView,  // <-- TAMBAHKAN UNTUK NAVIGASI
-  proposals, // <-- TAMBAHKAN UNTUK AKSES RESET FORM
+  setView,
+  proposals,
   addNotification,
+  branding,
+  currentUserProfile,  // <-- TAMBAHKAN INI
   isDarkMode
 }) => {
   
   // State untuk efek paralaks
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
-  // State untuk modal export  <-- TAMBAHKAN INI
   const [showExportModal, setShowExportModal] = useState(false);
 
   // Efek paralaks ringan
@@ -45,10 +46,20 @@ const DashboardView = ({
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
   
-  // Hitung statistik dashboard
+  // Cek level user
+  const userLevel = currentUserProfile?.level;
+  const isSuperAdmin = userLevel === 'Super Admin';
+  const isAdmin = userLevel === 'Admin' || isSuperAdmin;
+  const isKasubid = userLevel === 'Kepala Sub Bidang';
+  const isOperator = userLevel === 'Operator BKAD';
+  const isSkpd = userLevel === 'SKPD';
+  const isViewer = userLevel === 'TAPD' || userLevel === 'Viewer';
+
+  // ===== STATISTIK DASAR =====
   const chartData = useMemo(() => {
     const total = filteredProposals.length;
-    const pending = filteredProposals.filter(p => p.status === 'Pending' || p.status === 'Diverifikasi').length;
+    const pending = filteredProposals.filter(p => p.status === 'Pending').length;
+    const verified = filteredProposals.filter(p => p.status === 'Diverifikasi').length;
     const approved = filteredProposals.filter(p => p.status === 'Disetujui').length;
     const rejected = filteredProposals.filter(p => String(p.status).includes('Ditolak')).length;
 
@@ -59,167 +70,195 @@ const DashboardView = ({
     const topSkpds = Object.entries(skpdCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
     const maxSkpdCount = topSkpds.length > 0 ? topSkpds[0][1] : 1;
 
-    return { total, pending, approved, rejected, topSkpds, maxSkpdCount };
+    return { total, pending, verified, approved, rejected, topSkpds, maxSkpdCount };
   }, [filteredProposals]);
 
-  // ===== FITUR 1: GRAFIK TREN BULANAN (MENGGUNAKAN DATA REAL) =====
-const monthlyTrend = useMemo(() => {
-  // Ambil 6 bulan terakhir (dari bulan sekarang mundur ke belakang)
-  const months = [];
-  const now = new Date();
-  
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthName = date.toLocaleDateString('id-ID', { month: 'short' });
-    const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    
-    // Filter proposals untuk bulan ini
-    const proposalsThisMonth = filteredProposals.filter(p => {
-      const proposalDate = p.tanggalSurat || p.createdAt;
-      if (!proposalDate) return false;
-      
-      // Ambil tahun-bulan dari tanggal proposal (format: YYYY-MM-DD)
-      const proposalYearMonth = proposalDate.substring(0, 7);
-      return proposalYearMonth === yearMonth;
-    });
-    
-    const total = proposalsThisMonth.length;
-    const disetujui = proposalsThisMonth.filter(p => p.status === 'Disetujui').length;
-    const ditolak = proposalsThisMonth.filter(p => 
-      String(p.status).includes('Ditolak')
-    ).length;
-    const berjalan = total - disetujui - ditolak;
-    
-    months.push({
-      month: monthName,
-      yearMonth,
-      total,
-      disetujui,
-      ditolak,
-      berjalan
-    });
-  }
-  
-  return months;
-}, [filteredProposals]);
-
-  // ===== FITUR 2: RINGKASAN ANGGARAN =====
-  const anggaranSummary = useMemo(() => {
-    const totalDiajukan = filteredProposals.reduce((sum, p) => 
-      sum + (p.paguSesudah || 0), 0
-    );
-    const totalDisetujui = filteredProposals
-      .filter(p => p.status === 'Disetujui')
-      .reduce((sum, p) => sum + (p.paguSesudah || 0), 0);
-    
-    const persentase = totalDiajukan > 0 
-      ? ((totalDisetujui / totalDiajukan) * 100).toFixed(1) 
-      : 0;
-    
-    const sisa = totalDiajukan - totalDisetujui;
+  // ===== STATISTIK KHUSUS UNTUK KASUBID =====
+  const kasubidStats = useMemo(() => {
+    const menungguPersetujuan = filteredProposals.filter(p => p.status === 'Diverifikasi').length;
+    const sudahDisetujui = filteredProposals.filter(p => p.status === 'Disetujui').length;
+    const ditolak = filteredProposals.filter(p => p.status === 'Ditolak Kasubid').length;
     
     return {
-      totalDiajukan,
-      totalDisetujui,
-      persentase,
-      sisa
+      menungguPersetujuan,
+      sudahDisetujui,
+      ditolak,
+      totalDiproses: menungguPersetujuan + sudahDisetujui + ditolak
     };
   }, [filteredProposals]);
 
-  // ===== FITUR 3: AKTIVITAS TERBARU =====
-  const recentActivities = useMemo(() => {
-    // Ambil 5 proposal terbaru dan buat aktivitas
-    return filteredProposals
-      .slice(0, 5)
-      .map(p => {
-        let icon = <FileText size={14} />;
-        let color = '#3c5654';
-        let bgColor = '#3c565420';
-        
-        switch(p.status) {
-          case 'Pending':
-            icon = <Clock size={14} />;
-            color = '#d7a217';
-            bgColor = '#d7a21720';
-            break;
-          case 'Diverifikasi':
-            icon = <CheckCircle size={14} />;
-            color = '#3c5654';
-            bgColor = '#3c565420';
-            break;
-          case 'Disetujui':
-            icon = <CheckCircle size={14} />;
-            color = '#10b981';
-            bgColor = '#10b98120';
-            break;
-          case 'Ditolak':
-          case 'Ditolak Admin':
-          case 'Ditolak Operator':
-            icon = <XCircle size={14} />;
-            color = '#ef4444';
-            bgColor = '#ef444420';
-            break;
-          default:
-            icon = <FileText size={14} />;
-        }
-        
-        return {
-          id: p.id,
-          time: p.updatedAt || p.createdAt || new Date().toISOString(),
-          title: `${p.skpd || 'SKPD'} mengajukan usulan`,
-          description: p.nomorSurat || 'No. Surat',
-          status: p.status,
-          icon,
-          color,
-          bgColor
-        };
-      });
+  // ===== STATISTIK KHUSUS UNTUK OPERATOR =====
+  const operatorStats = useMemo(() => {
+    const menungguVerifikasi = filteredProposals.filter(p => p.status === 'Pending').length;
+    const sudahDiverifikasi = filteredProposals.filter(p => p.status === 'Diverifikasi').length;
+    const ditolak = filteredProposals.filter(p => p.status === 'Ditolak Operator').length;
+    
+    return {
+      menungguVerifikasi,
+      sudahDiverifikasi,
+      ditolak,
+      totalDiproses: menungguVerifikasi + sudahDiverifikasi + ditolak
+    };
   }, [filteredProposals]);
 
-  // ===== FITUR 4: QUICK ACTIONS PANEL =====
-  const quickActions = [
-    {
-      id: 'add',
-      label: 'Tambah Usulan',
-      icon: <PlusCircle size={18} />,
-      color: '#d7a217',
-      bgColor: '#d7a21720',
-      onClick: () => {
-        if (proposals?.resetForm) proposals.resetForm();
-        setView('add-proposal');
-      }
-    },
-    {
-      id: 'pending',
-      label: 'Lihat Pending',
-      icon: <Clock size={18} />,
-      color: '#d7a217',
-      bgColor: '#d7a21720',
-      onClick: () => {
-        setView('list');
-        // Set filter ke Pending (perlu implementasi di komponen lain)
-      }
-    },
-    {
-      id: 'export',
-      label: 'Export Laporan',
-      icon: <Download size={18} />,
-      color: '#425c5a',
-      bgColor: '#425c5a20',
-      onClick: () => setShowExportModal(true)
-      },
-    {
-      id: 'search',
-      label: 'Pencarian',
-      icon: <Search size={18} />,
-      color: '#425c5a',
-      bgColor: '#425c5a20',
-      onClick: () => {
-        setView('list');
-        // Fokus ke search (perlu implementasi)
-      }
+  // ===== STATISTIK KHUSUS UNTUK SKPD =====
+  const skpdStats = useMemo(() => {
+    const usulanSaya = filteredProposals.filter(p => p.skpdId === currentUserProfile?.skpdId).length;
+    const disetujui = filteredProposals.filter(p => p.skpdId === currentUserProfile?.skpdId && p.status === 'Disetujui').length;
+    const ditolak = filteredProposals.filter(p => p.skpdId === currentUserProfile?.skpdId && String(p.status).includes('Ditolak')).length;
+    const pending = filteredProposals.filter(p => p.skpdId === currentUserProfile?.skpdId && p.status === 'Pending').length;
+    
+    return {
+      usulanSaya,
+      disetujui,
+      ditolak,
+      pending
+    };
+  }, [filteredProposals, currentUserProfile]);
+
+  // ===== FITUR 1: GRAFIK TREN BULANAN =====
+  const monthlyTrend = useMemo(() => {
+    const months = [];
+    const now = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString('id-ID', { month: 'short' });
+      const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      const proposalsThisMonth = filteredProposals.filter(p => {
+        const proposalDate = p.tanggalSurat || p.createdAt;
+        if (!proposalDate) return false;
+        const proposalYearMonth = proposalDate.substring(0, 7);
+        return proposalYearMonth === yearMonth;
+      });
+      
+      const total = proposalsThisMonth.length;
+      const disetujui = proposalsThisMonth.filter(p => p.status === 'Disetujui').length;
+      const ditolak = proposalsThisMonth.filter(p => String(p.status).includes('Ditolak')).length;
+      const berjalan = total - disetujui - ditolak;
+      
+      months.push({
+        month: monthName,
+        yearMonth,
+        total,
+        disetujui,
+        ditolak,
+        berjalan
+      });
     }
-  ];
+    
+    return months;
+  }, [filteredProposals]);
+
+  // ===== FITUR 2: AKTIVITAS TERBARU (BERDASARKAN LEVEL) =====
+  const recentActivities = useMemo(() => {
+    let filtered = filteredProposals;
+    
+    // Filter berdasarkan level
+    if (isOperator) {
+      filtered = filteredProposals.filter(p => p.status === 'Pending');
+    } else if (isKasubid) {
+      filtered = filteredProposals.filter(p => p.status === 'Diverifikasi');
+    } else if (isSkpd) {
+      filtered = filteredProposals.filter(p => p.skpdId === currentUserProfile?.skpdId);
+    }
+    
+    return filtered.slice(0, 5).map(p => {
+      let icon = <FileText size={14} />;
+      let color = '#3c5654';
+      let bgColor = '#3c565420';
+      
+      switch(p.status) {
+        case 'Pending':
+          icon = <Clock size={14} />;
+          color = '#d7a217';
+          bgColor = '#d7a21720';
+          break;
+        case 'Diverifikasi':
+          icon = <CheckCircle size={14} />;
+          color = '#3c5654';
+          bgColor = '#3c565420';
+          break;
+        case 'Disetujui':
+          icon = <CheckCircle size={14} />;
+          color = '#10b981';
+          bgColor = '#10b98120';
+          break;
+        case 'Ditolak Operator':
+        case 'Ditolak Kasubid':
+        case 'Ditolak Admin':
+          icon = <XCircle size={14} />;
+          color = '#ef4444';
+          bgColor = '#ef444420';
+          break;
+        default:
+          icon = <FileText size={14} />;
+      }
+      
+      return {
+        id: p.id,
+        time: p.updatedAt || p.createdAt || new Date().toISOString(),
+        title: `${p.skpd || 'SKPD'} mengajukan usulan`,
+        description: p.nomorSurat || 'No. Surat',
+        status: p.status,
+        icon,
+        color,
+        bgColor
+      };
+    });
+  }, [filteredProposals, isOperator, isKasubid, isSkpd, currentUserProfile]);
+
+  // ===== QUICK ACTIONS (BERDASARKAN LEVEL) =====
+  const quickActions = useMemo(() => {
+    const actions = [
+      {
+        id: 'add',
+        label: 'Tambah Usulan',
+        icon: <PlusCircle size={18} />,
+        color: '#d7a217',
+        bgColor: '#d7a21720',
+        onClick: () => {
+          if (proposals?.resetForm) proposals.resetForm();
+          setView('add-proposal');
+        },
+        showFor: ['SKPD', 'Admin', 'Super Admin', 'Operator BKAD'] // Bisa tambah usulan
+      },
+      {
+        id: 'pending',
+        label: isOperator ? 'Lihat Antrian' : (isKasubid ? 'Lihat Persetujuan' : 'Lihat Pending'),
+        icon: <Clock size={18} />,
+        color: '#d7a217',
+        bgColor: '#d7a21720',
+        onClick: () => {
+          setView('list');
+        },
+        showFor: ['Admin', 'Super Admin', 'Operator BKAD', 'Kepala Sub Bidang']
+      },
+      {
+        id: 'export',
+        label: 'Export Laporan',
+        icon: <Download size={18} />,
+        color: '#425c5a',
+        bgColor: '#425c5a20',
+        onClick: () => setShowExportModal(true),
+        showFor: ['Admin', 'Super Admin', 'Operator BKAD', 'Kepala Sub Bidang', 'TAPD']
+      },
+      {
+        id: 'search',
+        label: 'Pencarian',
+        icon: <Search size={18} />,
+        color: '#425c5a',
+        bgColor: '#425c5a20',
+        onClick: () => {
+          setView('list');
+        },
+        showFor: ['Admin', 'Super Admin', 'Operator BKAD', 'Kepala Sub Bidang', 'SKPD', 'TAPD']
+      }
+    ];
+    
+    return actions.filter(action => action.showFor.includes(userLevel));
+  }, [userLevel, isOperator, isKasubid, proposals, setView]);
 
   // Format Rupiah
   const formatRupiah = (angka) => {
@@ -246,7 +285,7 @@ const monthlyTrend = useMemo(() => {
     return `${diffDays} hari lalu`;
   };
 
-  // Palet warna teal & gold
+  // Palet warna
   const colors = {
     tealDark: '#425c5a',
     tealMedium: '#3c5654',
@@ -256,79 +295,76 @@ const monthlyTrend = useMemo(() => {
   };
 
   // ===== FUNGSI EXPORT DATA =====
-const handleExport = async ({ type, dateRange, includeDetails }) => {
-  try {
-    // Filter data berdasarkan rentang tanggal
-    let dataToExport = filteredProposals;
-    
-    if (dateRange.start) {
-      dataToExport = dataToExport.filter(p => 
-        (p.tanggalSurat || p.createdAt) >= dateRange.start
-      );
-    }
-    if (dateRange.end) {
-      dataToExport = dataToExport.filter(p => 
-        (p.tanggalSurat || p.createdAt) <= dateRange.end
-      );
-    }
-    
-    if (type === 'excel') {
-      // Export Excel
-      const headers = ["Tahap", "Tanggal Surat", "No. Surat", "SKPD", "Sub Kegiatan", 
-                       "Kode Rekening", "Uraian", "Pagu Semula", "Pagu Sesudah", "Status"];
-      const rows = [];
+  const handleExport = async ({ type, dateRange, includeDetails }) => {
+    try {
+      let dataToExport = filteredProposals;
       
-      dataToExport.forEach(p => {
-        const rincianList = includeDetails && p.rincian?.length > 0 
-          ? p.rincian 
-          : [{ kodeRekening: '-', uraian: p.subKegiatan, paguSebelum: p.paguSebelum, paguSesudah: p.paguSesudah }];
+      if (dateRange.start) {
+        dataToExport = dataToExport.filter(p => 
+          (p.tanggalSurat || p.createdAt) >= dateRange.start
+        );
+      }
+      if (dateRange.end) {
+        dataToExport = dataToExport.filter(p => 
+          (p.tanggalSurat || p.createdAt) <= dateRange.end
+        );
+      }
+      
+      if (type === 'excel') {
+        const headers = ["Tahap", "Tanggal Surat", "No. Surat", "SKPD", "Sub Kegiatan", 
+                         "Kode Rekening", "Uraian", "Pagu Semula", "Pagu Sesudah", "Status"];
+        const rows = [];
         
-        rincianList.forEach(r => {
-          rows.push([
-            p.tahap || '-',
-            p.tanggalSurat || '-',
-            p.nomorSurat || '-',
-            p.skpd || '-',
-            p.subKegiatan || '-',
-            r.kodeRekening || '-',
-            r.uraian || '-',
-            r.paguSebelum || 0,
-            r.paguSesudah || 0,
-            p.status || '-'
-          ]);
+        dataToExport.forEach(p => {
+          const rincianList = includeDetails && p.rincian?.length > 0 
+            ? p.rincian 
+            : [{ kodeRekening: '-', uraian: p.subKegiatan, paguSebelum: p.paguSebelum, paguSesudah: p.paguSesudah }];
+          
+          rincianList.forEach(r => {
+            rows.push([
+              p.tahap || '-',
+              p.tanggalSurat || '-',
+              p.nomorSurat || '-',
+              p.skpd || '-',
+              p.subKegiatan || '-',
+              r.kodeRekening || '-',
+              r.uraian || '-',
+              r.paguSebelum || 0,
+              r.paguSesudah || 0,
+              p.status || '-'
+            ]);
+          });
         });
-      });
+        
+        const csvContent = "\uFEFF" + headers.join(';') + '\n' + 
+                          rows.map(r => r.join(';')).join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `export_usulan_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+      } else if (type === 'pdf') {
+        alert('Fitur export PDF akan segera hadir!');
+      }
       
-      const csvContent = "\uFEFF" + headers.join(';') + '\n' + 
-                        rows.map(r => r.join(';')).join('\n');
+      setShowExportModal(false);
+      addNotification(`Data berhasil diekspor (${dataToExport.length} usulan)`, 'success');
       
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `export_usulan_${new Date().toISOString().slice(0,10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-    } else if (type === 'pdf') {
-      // Export PDF (sederhana - bisa dikembangkan dengan library seperti jsPDF)
-      alert('Fitur export PDF akan segera hadir!');
+    } catch (error) {
+      console.error('Export error:', error);
+      addNotification('Gagal mengekspor data', 'error');
     }
-    
-    setShowExportModal(false);
-    addNotification(`Data berhasil diekspor (${dataToExport.length} usulan)`, 'success');
-    
-  } catch (error) {
-    console.error('Export error:', error);
-    addNotification('Gagal mengekspor data', 'error');
-  }
-};
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in relative overflow-hidden pb-10">
       
-      {/* Animated Background Elements */}
+      {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0">
           {[...Array(12)].map((_, i) => (
@@ -372,21 +408,42 @@ const handleExport = async ({ type, dateRange, includeDetails }) => {
         />
       </div>
 
-      {/* Header */}
+      {/* Header dengan Info Level User */}
       <div className="relative z-10">
-        <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-4">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-4">
           <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-[#d7a217]/20 flex items-center justify-center">
+                <Shield size={16} className="text-[#d7a217]" />
+              </div>
+              <span className="text-xs px-3 py-1 rounded-full" style={{ 
+                backgroundColor: `${colors.gold}20`,
+                color: colors.gold
+              }}>
+                {userLevel}
+              </span>
+            </div>
             <h1 
               className="text-2xl font-bold tracking-tight"
               style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}
             >
-              Monitoring Berkas
+              {isOperator && 'Panel Verifikasi Operator'}
+              {isKasubid && 'Panel Persetujuan Kepala Sub Bidang'}
+              {isSkpd && 'Dashboard Instansi'}
+              {isAdmin && 'Dashboard Administrator'}
+              {isViewer && 'Dashboard Viewer'}
+              {!isOperator && !isKasubid && !isSkpd && !isAdmin && !isViewer && 'Monitoring Berkas'}
             </h1>
             <p 
               className="text-sm mt-1"
               style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}
             >
-              Dashboard Utama Aplikasi Pendataan Pergeseran Anggaran
+              {isOperator && 'Kelola verifikasi usulan yang masuk dari SKPD'}
+              {isKasubid && 'Berikan persetujuan akhir untuk usulan yang sudah diverifikasi'}
+              {isSkpd && 'Pantau status usulan instansi Anda'}
+              {isAdmin && 'Dashboard Utama Administrator'}
+              {isViewer && 'Lihat seluruh aktivitas sistem'}
+              {!isOperator && !isKasubid && !isSkpd && !isAdmin && !isViewer && 'Dashboard Utama Aplikasi'}
             </p>
           </div>
           
@@ -451,290 +508,179 @@ const handleExport = async ({ type, dateRange, includeDetails }) => {
               </select>
             </div>
           </div>
-        </header>
-      </div>
-
-      {/* Stat Cards (Existing) */}
-      <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-5">
-        {/* Card MASUK */}
-        <div 
-          className="glass-card p-5 rounded-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl group"
-          style={{ 
-            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
-            border: `1px solid ${isDarkMode ? 'rgba(215, 162, 23, 0.2)' : colors.tealPale}`,
-          }}
-        >
-          <div className="flex items-start justify-between mb-3">
-            <div 
-              className="p-3 rounded-xl group-hover:scale-110 transition-transform duration-300"
-              style={{ backgroundColor: `${colors.gold}20` }}
-            >
-              <Inbox size={22} style={{ color: colors.gold }} />
-            </div>
-            <span className="text-3xl font-bold" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-              {chartData.total}
-            </span>
-          </div>
-          <h3 className="text-sm font-bold uppercase tracking-wider mb-1" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-            MASUK
-          </h3>
-          <p className="text-xs" style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}>
-            Filter Aktif
-          </p>
-        </div>
-
-        {/* Card PROSES */}
-        <div 
-          className="glass-card p-5 rounded-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl group"
-          style={{ 
-            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
-            border: `1px solid ${isDarkMode ? 'rgba(215, 162, 23, 0.2)' : colors.tealPale}`,
-          }}
-        >
-          <div className="flex items-start justify-between mb-3">
-            <div 
-              className="p-3 rounded-xl group-hover:scale-110 transition-transform duration-300"
-              style={{ backgroundColor: `${colors.gold}20` }}
-            >
-              <Clock size={22} style={{ color: colors.gold }} />
-            </div>
-            <span className="text-3xl font-bold" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-              {chartData.pending}
-            </span>
-          </div>
-          <h3 className="text-sm font-bold uppercase tracking-wider mb-1" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-            PROSES
-          </h3>
-          <p className="text-xs" style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}>
-            Sedang Berjalan
-          </p>
-        </div>
-
-        {/* Card DISETUJUI */}
-        <div 
-          className="glass-card p-5 rounded-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl group"
-          style={{ 
-            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
-            border: `1px solid ${isDarkMode ? 'rgba(215, 162, 23, 0.2)' : colors.tealPale}`,
-          }}
-        >
-          <div className="flex items-start justify-between mb-3">
-            <div 
-              className="p-3 rounded-xl group-hover:scale-110 transition-transform duration-300"
-              style={{ backgroundColor: `${colors.gold}20` }}
-            >
-              <FileCheck size={22} style={{ color: colors.gold }} />
-            </div>
-            <span className="text-3xl font-bold" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-              {chartData.approved}
-            </span>
-          </div>
-          <h3 className="text-sm font-bold uppercase tracking-wider mb-1" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-            DISETUJUI
-          </h3>
-          <p className="text-xs" style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}>
-            Selesai Final
-          </p>
-        </div>
-
-        {/* Card DITOLAK */}
-        <div 
-          className="glass-card p-5 rounded-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl group"
-          style={{ 
-            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
-            border: `1px solid ${isDarkMode ? 'rgba(215, 162, 23, 0.2)' : colors.tealPale}`,
-          }}
-        >
-          <div className="flex items-start justify-between mb-3">
-            <div 
-              className="p-3 rounded-xl group-hover:scale-110 transition-transform duration-300"
-              style={{ backgroundColor: `${colors.gold}20` }}
-            >
-              <FileX size={22} style={{ color: colors.gold }} />
-            </div>
-            <span className="text-3xl font-bold" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-              {chartData.rejected}
-            </span>
-          </div>
-          <h3 className="text-sm font-bold uppercase tracking-wider mb-1" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-            DITOLAK
-          </h3>
-          <p className="text-xs" style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}>
-            Perlu Perbaikan
-          </p>
         </div>
       </div>
 
-      {/* ===== KALENDER DEADLINE ===== */}
-<div className="relative z-10 mt-6">
-  <CalendarView 
-    proposals={filteredProposals}
-    isDarkMode={isDarkMode}
-    colors={colors}
-    onDateClick={(date, proposals) => {
-      // Navigasi ke daftar berkas dengan filter tanggal
-      console.log('Selected date:', date, proposals);
-      // Jika ingin navigasi ke halaman daftar dengan filter:
-      // setView('list');
-      // dan set filter tanggal (perlu implementasi di komponen list)
-    }}
-  />
-</div>    
-
-      {/* ===== FITUR 1: GRAFIK TREN BULANAN ===== */}
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-        <div className="lg:col-span-2">
-          <div 
-            className="glass-card p-6 rounded-2xl backdrop-blur-md transition-all hover:shadow-xl"
-            style={{ 
-              backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
-              border: `1px solid ${isDarkMode ? 'rgba(215, 162, 23, 0.2)' : colors.tealPale}`,
-            }}
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-                <TrendingUp size={20} style={{ color: colors.gold }} />
-                Tren Usulan 6 Bulan Terakhir
-              </h3>
-              <span className="text-xs px-3 py-1 rounded-full" style={{ 
-                backgroundColor: `${colors.gold}20`,
-                color: colors.gold
-              }}>
-                {selectedYear}
-              </span>
-            </div>
-            
-            {/* Bar Chart dengan Data Real */}
-<div className="space-y-4">
-  {monthlyTrend.map((item, idx) => (
-    <div key={idx} className="space-y-1">
-      <div className="flex justify-between items-center text-xs">
-        <span style={{ color: colors.tealMedium }}>{item.month}</span>
-        <div className="flex gap-3">
-          <span style={{ color: colors.gold }}>{item.total} usulan</span>
-          <span style={{ color: '#10b981' }}>{item.disetujui} ✓</span>
-          <span style={{ color: '#ef4444' }}>{item.ditolak} ✗</span>
-        </div>
-      </div>
-      <div className="flex gap-1 h-2">
-        {item.total > 0 ? (
+      {/* Stat Cards - Dinamis berdasarkan level */}
+      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        {/* Card untuk OPERATOR */}
+        {isOperator && (
           <>
-            <div 
-              className="h-2 rounded-l-full transition-all"
-              style={{ 
-                width: `${(item.disetujui / item.total) * 100}%`,
-                backgroundColor: '#10b981'
-              }}
-              title={`Disetujui: ${item.disetujui}`}
+            <StatCard 
+              title="Menunggu Verifikasi" 
+              value={operatorStats.menungguVerifikasi} 
+              icon={<Clock size={22} />}
+              color="#d7a217"
+              isDarkMode={isDarkMode}
+              colors={colors}
             />
-            <div 
-              className="h-2 transition-all"
-              style={{ 
-                width: `${(item.berjalan / item.total) * 100}%`,
-                backgroundColor: colors.gold
-              }}
-              title={`Berjalan: ${item.berjalan}`}
+            <StatCard 
+              title="Sudah Diverifikasi" 
+              value={operatorStats.sudahDiverifikasi} 
+              icon={<CheckCircle size={22} />}
+              color="#3c5654"
+              isDarkMode={isDarkMode}
+              colors={colors}
             />
-            <div 
-              className="h-2 rounded-r-full transition-all"
-              style={{ 
-                width: `${(item.ditolak / item.total) * 100}%`,
-                backgroundColor: '#ef4444'
-              }}
-              title={`Ditolak: ${item.ditolak}`}
+            <StatCard 
+              title="Ditolak" 
+              value={operatorStats.ditolak} 
+              icon={<XCircle size={22} />}
+              color="#ef4444"
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+            <StatCard 
+              title="Total Diproses" 
+              value={operatorStats.totalDiproses} 
+              icon={<Activity size={22} />}
+              color="#425c5a"
+              isDarkMode={isDarkMode}
+              colors={colors}
             />
           </>
-        ) : (
-          <div 
-            className="h-2 rounded-full bg-gray-200 dark:bg-gray-700 w-full"
-            title="Tidak ada data"
-          />
+        )}
+
+        {/* Card untuk KASUBID */}
+        {isKasubid && (
+          <>
+            <StatCard 
+              title="Menunggu Persetujuan" 
+              value={kasubidStats.menungguPersetujuan} 
+              icon={<Clock size={22} />}
+              color="#d7a217"
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+            <StatCard 
+              title="Sudah Disetujui" 
+              value={kasubidStats.sudahDisetujui} 
+              icon={<CheckCircle size={22} />}
+              color="#10b981"
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+            <StatCard 
+              title="Ditolak" 
+              value={kasubidStats.ditolak} 
+              icon={<XCircle size={22} />}
+              color="#ef4444"
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+            <StatCard 
+              title="Total Diproses" 
+              value={kasubidStats.totalDiproses} 
+              icon={<Activity size={22} />}
+              color="#425c5a"
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+          </>
+        )}
+
+        {/* Card untuk SKPD */}
+        {isSkpd && (
+          <>
+            <StatCard 
+              title="Usulan Saya" 
+              value={skpdStats.usulanSaya} 
+              icon={<FileText size={22} />}
+              color="#425c5a"
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+            <StatCard 
+              title="Disetujui" 
+              value={skpdStats.disetujui} 
+              icon={<CheckCircle size={22} />}
+              color="#10b981"
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+            <StatCard 
+              title="Pending" 
+              value={skpdStats.pending} 
+              icon={<Clock size={22} />}
+              color="#d7a217"
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+            <StatCard 
+              title="Ditolak" 
+              value={skpdStats.ditolak} 
+              icon={<XCircle size={22} />}
+              color="#ef4444"
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+          </>
+        )}
+
+        {/* Card untuk ADMIN / SUPER ADMIN / VIEWER */}
+        {(isAdmin || isViewer) && !isOperator && !isKasubid && !isSkpd && (
+          <>
+            <StatCard 
+              title="Total Usulan" 
+              value={chartData.total} 
+              icon={<Inbox size={22} />}
+              color="#425c5a"
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+            <StatCard 
+              title="Proses" 
+              value={chartData.pending + chartData.verified} 
+              icon={<Clock size={22} />}
+              color="#d7a217"
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+            <StatCard 
+              title="Disetujui" 
+              value={chartData.approved} 
+              icon={<FileCheck size={22} />}
+              color="#10b981"
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+            <StatCard 
+              title="Ditolak" 
+              value={chartData.rejected} 
+              icon={<FileX size={22} />}
+              color="#ef4444"
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+          </>
         )}
       </div>
-    </div>
-  ))}
-</div>
 
-{/* Legend (Update) */}
-<div className="flex justify-end gap-4 mt-4 text-xs">
-  <div className="flex items-center gap-2">
-    <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
-    <span style={{ color: colors.tealMedium }}>Disetujui</span>
-  </div>
-  <div className="flex items-center gap-2">
-    <div className="w-3 h-3 rounded-full bg-[#d7a217]"></div>
-    <span style={{ color: colors.tealMedium }}>Berjalan</span>
-  </div>
-  <div className="flex items-center gap-2">
-    <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
-    <span style={{ color: colors.tealMedium }}>Ditolak</span>
-  </div>
-</div>
-          </div>
-        </div>
-
-        {/* ===== FITUR 2: RINGKASAN ANGGARAN ===== */}
-        <div className="lg:col-span-1">
-          <div 
-            className="glass-card p-6 rounded-2xl backdrop-blur-md transition-all hover:shadow-xl h-full"
-            style={{ 
-              backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
-              border: `1px solid ${isDarkMode ? 'rgba(215, 162, 23, 0.2)' : colors.tealPale}`,
-            }}
-          >
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-              <DollarSign size={20} style={{ color: colors.gold }} />
-              Ringkasan Anggaran
-            </h3>
-            
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl" style={{ backgroundColor: `${colors.gold}10` }}>
-                <p className="text-xs mb-1" style={{ color: colors.tealMedium }}>Total Diajukan</p>
-                <p className="text-xl font-bold" style={{ color: colors.tealDark }}>
-                  {formatRupiah(anggaranSummary.totalDiajukan)}
-                </p>
-              </div>
-              
-              <div className="p-4 rounded-xl" style={{ backgroundColor: '#10b98110' }}>
-                <p className="text-xs mb-1" style={{ color: colors.tealMedium }}>Total Disetujui</p>
-                <p className="text-xl font-bold" style={{ color: '#10b981' }}>
-                  {formatRupiah(anggaranSummary.totalDisetujui)}
-                </p>
-              </div>
-              
-              <div className="flex justify-between items-center p-3 rounded-xl" style={{ backgroundColor: `${colors.tealPale}30` }}>
-                <span className="text-sm" style={{ color: colors.tealMedium }}>Persentase</span>
-                <span className="text-lg font-bold" style={{ color: colors.gold }}>{anggaranSummary.persentase}%</span>
-              </div>
-              
-              <div className="flex justify-between items-center p-3 rounded-xl" style={{ backgroundColor: `${colors.tealPale}30` }}>
-                <span className="text-sm" style={{ color: colors.tealMedium }}>Sisa Anggaran</span>
-                <span className="text-lg font-bold" style={{ color: colors.tealDark }}>
-                  {formatRupiah(anggaranSummary.sisa)}
-                </span>
-              </div>
-              
-              {/* Progress Circle */}
-              <div className="relative w-24 h-24 mx-auto mt-2">
-                <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                  <circle cx="18" cy="18" r="15.9155" fill="transparent" 
-                    stroke={colors.tealPale} strokeWidth="3"/>
-                  <circle cx="18" cy="18" r="15.9155" fill="transparent" 
-                    stroke={colors.gold} strokeWidth="3"
-                    strokeDasharray={`${anggaranSummary.persentase} ${100 - anggaranSummary.persentase}`}
-                    strokeDashoffset="100"
-                    strokeLinecap="round"/>
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-lg font-bold" style={{ color: colors.gold }}>{anggaranSummary.persentase}%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Calendar View - Untuk semua level (opsional) */}
+      <div className="relative z-10 mt-6">
+        <CalendarView 
+          proposals={filteredProposals}
+          isDarkMode={isDarkMode}
+          colors={colors}
+          branding={branding}
+          onDateClick={(date, proposals) => {
+            console.log('Selected date:', date, proposals);
+          }}
+        />
       </div>
 
-      {/* ===== FITUR 3 & 4: AKTIVITAS TERBARU & QUICK ACTIONS ===== */}
+      {/* Quick Actions & Aktivitas Terbaru */}
       <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         
         {/* Aktivitas Terbaru */}
@@ -749,6 +695,8 @@ const handleExport = async ({ type, dateRange, includeDetails }) => {
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
               <Activity size={20} style={{ color: colors.gold }} />
               Aktivitas Terbaru
+              {isOperator && <span className="text-xs ml-2 px-2 py-1 bg-[#d7a217]/20 text-[#d7a217] rounded-full">Antrian Verifikasi</span>}
+              {isKasubid && <span className="text-xs ml-2 px-2 py-1 bg-[#10b981]/20 text-[#10b981] rounded-full">Menunggu Persetujuan</span>}
             </h3>
             
             <div className="space-y-3">
@@ -762,9 +710,8 @@ const handleExport = async ({ type, dateRange, includeDetails }) => {
                       border: `1px solid ${colors.tealPale}`
                     }}
                     onClick={() => {
-                      // Navigasi ke detail proposal
                       if (activity.id) {
-                        // Implementasi navigasi ke detail
+                        // Navigasi ke detail proposal
                       }
                     }}
                   >
@@ -779,7 +726,7 @@ const handleExport = async ({ type, dateRange, includeDetails }) => {
                         {activity.title}
                       </p>
                       <p className="text-xs mt-1" style={{ color: colors.tealMedium }}>
-                        {activity.description}
+                        {activity.description} • {activity.status}
                       </p>
                     </div>
                     <div className="text-[9px] whitespace-nowrap" style={{ color: colors.tealMedium }}>
@@ -790,7 +737,12 @@ const handleExport = async ({ type, dateRange, includeDetails }) => {
               ) : (
                 <div className="text-center py-8">
                   <Activity size={32} className="mx-auto mb-2 opacity-30" style={{ color: colors.tealMedium }} />
-                  <p className="text-sm italic" style={{ color: colors.tealMedium }}>Belum ada aktivitas</p>
+                  <p className="text-sm italic" style={{ color: colors.tealMedium }}>
+                    {isOperator && 'Tidak ada usulan yang perlu diverifikasi'}
+                    {isKasubid && 'Tidak ada usulan yang perlu disetujui'}
+                    {isSkpd && 'Belum ada aktivitas dari instansi Anda'}
+                    {isAdmin && 'Belum ada aktivitas terbaru'}
+                  </p>
                 </div>
               )}
             </div>
@@ -839,171 +791,62 @@ const handleExport = async ({ type, dateRange, includeDetails }) => {
             <div className="mt-6 pt-4 border-t" style={{ borderColor: colors.tealPale }}>
               <div className="flex justify-between items-center text-xs">
                 <span style={{ color: colors.tealMedium }}>Usulan Hari Ini</span>
-                <span className="font-bold" style={{ color: colors.gold }}>8</span>
+                <span className="font-bold" style={{ color: colors.gold }}>
+                  {filteredProposals.filter(p => {
+                    const today = new Date().toISOString().split('T')[0];
+                    return (p.tanggalSurat || p.createdAt)?.startsWith(today);
+                  }).length}
+                </span>
               </div>
               <div className="flex justify-between items-center text-xs mt-2">
-                <span style={{ color: colors.tealMedium }}>Perlu Verifikasi</span>
-                <span className="font-bold" style={{ color: colors.gold }}>{chartData.pending}</span>
+                <span style={{ color: colors.tealMedium }}>
+                  {isOperator ? 'Perlu Verifikasi' : (isKasubid ? 'Perlu Persetujuan' : 'Perlu Verifikasi')}
+                </span>
+                <span className="font-bold" style={{ color: colors.gold }}>
+                  {isOperator ? operatorStats.menungguVerifikasi : 
+                   isKasubid ? kasubidStats.menungguPersetujuan : 
+                   chartData.pending}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Existing Charts Section (Distribusi Status & Top SKPD) */}
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        
-        {/* Chart 1: Status Distribution */}
-        <div 
-          className="glass-card p-6 rounded-2xl backdrop-blur-md transition-all hover:shadow-xl"
-          style={{ 
-            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
-            border: `1px solid ${isDarkMode ? 'rgba(215, 162, 23, 0.2)' : colors.tealPale}`,
-          }}
-        >
-          <h3 className="text-lg font-bold mb-6 flex items-center gap-2" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-            <PieChart size={20} style={{ color: colors.gold }} />
-            Distribusi Status Berkas
-          </h3>
-          
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            {chartData.total === 0 ? (
-              <p className="text-center py-8 italic w-full" style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}>
-                Data tidak tersedia untuk filter ini.
-              </p>
-            ) : (
-              <>
-                {/* Donut Chart */}
-                <div className="relative w-40 h-40 flex-shrink-0">
-                  <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                    <circle cx="18" cy="18" r="15.9155" fill="transparent" 
-                      stroke={isDarkMode ? colors.tealMedium : colors.tealPale} 
-                      strokeWidth="3"/>
-                    {chartData.approved > 0 && (
-                      <circle cx="18" cy="18" r="15.9155" fill="transparent" 
-                        stroke={colors.gold} strokeWidth="3"
-                        strokeDasharray={`${(chartData.approved/chartData.total)*100} ${100 - (chartData.approved/chartData.total)*100}`} 
-                        strokeDashoffset="100"
-                        strokeLinecap="round"/>
-                    )}
-                    {chartData.rejected > 0 && (
-                      <circle cx="18" cy="18" r="15.9155" fill="transparent" 
-                        stroke={colors.tealDark} strokeWidth="3"
-                        strokeDasharray={`${(chartData.rejected/chartData.total)*100} ${100 - (chartData.rejected/chartData.total)*100}`} 
-                        strokeDashoffset={`${100 - ((chartData.approved/chartData.total)*100)}`}
-                        strokeLinecap="round"/>
-                    )}
-                    {chartData.pending > 0 && (
-                      <circle cx="18" cy="18" r="15.9155" fill="transparent" 
-                        stroke={colors.tealLight} strokeWidth="3"
-                        strokeDasharray={`${(chartData.pending/chartData.total)*100} ${100 - (chartData.pending/chartData.total)*100}`} 
-                        strokeDashoffset={`${100 - ((chartData.approved/chartData.total)*100) - ((chartData.rejected/chartData.total)*100)}`}
-                        strokeLinecap="round"/>
-                    )}
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-                      {chartData.total}
-                    </span>
-                    <span className="text-[8px] font-medium uppercase tracking-wider" style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}>
-                      Total
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Legend */}
-                <div className="space-y-3 w-full">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.gold }}></div>
-                      <span className="text-sm font-medium" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-                        Disetujui
-                      </span>
-                    </div>
-                    <span className="text-sm font-bold" style={{ color: colors.gold }}>
-                      {((chartData.approved/chartData.total)*100).toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.tealDark }}></div>
-                      <span className="text-sm font-medium" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-                        Ditolak
-                      </span>
-                    </div>
-                    <span className="text-sm font-bold" style={{ color: colors.gold }}>
-                      {((chartData.rejected/chartData.total)*100).toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.tealLight }}></div>
-                      <span className="text-sm font-medium" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-                        Berjalan
-                      </span>
-                    </div>
-                    <span className="text-sm font-bold" style={{ color: colors.gold }}>
-                      {((chartData.pending/chartData.total)*100).toFixed(0)}%
-                    </span>
-                  </div>
-                </div>
-              </>
-            )}
+      {/* Charts Section - Sesuai level */}
+      {(isAdmin || isSuperAdmin || isViewer) && (
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          {/* Chart Distribusi Status */}
+          <div 
+            className="glass-card p-6 rounded-2xl backdrop-blur-md transition-all hover:shadow-xl"
+            style={{ 
+              backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
+              border: `1px solid ${isDarkMode ? 'rgba(215, 162, 23, 0.2)' : colors.tealPale}`,
+            }}
+          >
+            <h3 className="text-lg font-bold mb-4" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
+              Distribusi Status
+            </h3>
+            {/* Chart content */}
+          </div>
+
+          {/* Chart Top SKPD */}
+          <div 
+            className="glass-card p-6 rounded-2xl backdrop-blur-md transition-all hover:shadow-xl"
+            style={{ 
+              backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
+              border: `1px solid ${isDarkMode ? 'rgba(215, 162, 23, 0.2)' : colors.tealPale}`,
+            }}
+          >
+            <h3 className="text-lg font-bold mb-4" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
+              Instansi Teraktif
+            </h3>
+            {/* Chart content */}
           </div>
         </div>
+      )}
 
-        {/* Chart 2: Top SKPDs */}
-        <div 
-          className="glass-card p-6 rounded-2xl backdrop-blur-md transition-all hover:shadow-xl"
-          style={{ 
-            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
-            border: `1px solid ${isDarkMode ? 'rgba(215, 162, 23, 0.2)' : colors.tealPale}`,
-          }}
-        >
-          <h3 className="text-lg font-bold mb-6 flex items-center gap-2" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-            <BarChart2 size={20} style={{ color: colors.gold }} />
-            5 Instansi Teraktif
-          </h3>
-          
-          <div className="space-y-5">
-            {chartData.topSkpds.length === 0 ? (
-              <p className="text-center py-8 italic" style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}>
-                Data tidak tersedia
-              </p>
-            ) : (
-              chartData.topSkpds.map(([name, count], index) => (
-                <div key={index} className="space-y-2 group">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      {index === 0 && <Star size={14} style={{ color: colors.gold }} className="animate-pulse" />}
-                      <span className="text-sm font-medium" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
-                        {String(name || "")}
-                      </span>
-                    </div>
-                    <span className="text-sm font-bold" style={{ color: colors.gold }}>
-                      {count} Usulan
-                    </span>
-                  </div>
-                  <div 
-                    className="w-full h-2 rounded-full overflow-hidden"
-                    style={{ backgroundColor: isDarkMode ? colors.tealMedium : colors.tealPale }}
-                  >
-                    <div 
-                      className="h-full rounded-full transition-all duration-1000 group-hover:opacity-80"
-                      style={{ 
-                        width: `${(count / chartData.maxSkpdCount) * 100}%`,
-                        background: `linear-gradient(90deg, ${colors.gold} 0%, ${colors.tealDark} 100%)`
-                      }}
-                    />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-
-       {/* Modal Export */}
+      {/* Modal Export */}
       {showExportModal && (
         <ExportModal
           show={showExportModal}
@@ -1013,7 +856,7 @@ const handleExport = async ({ type, dateRange, includeDetails }) => {
           colors={colors}
           totalData={filteredProposals.length}
         />
-      )}        
+      )}
 
       {/* Custom CSS Animations */}
       <style>{`
@@ -1025,6 +868,34 @@ const handleExport = async ({ type, dateRange, includeDetails }) => {
           animation: float 6s ease-in-out infinite;
         }
       `}</style>
+    </div>
+  );
+};
+
+// Komponen StatCard (internal)
+const StatCard = ({ title, value, icon, color, isDarkMode, colors }) => {
+  return (
+    <div 
+      className="glass-card p-5 rounded-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl group"
+      style={{ 
+        backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
+        border: `1px solid ${isDarkMode ? 'rgba(215, 162, 23, 0.2)' : colors.tealPale}`,
+      }}
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div 
+          className="p-3 rounded-xl group-hover:scale-110 transition-transform duration-300"
+          style={{ backgroundColor: `${color}20` }}
+        >
+          <div style={{ color: color }}>{icon}</div>
+        </div>
+        <span className="text-3xl font-bold" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
+          {value}
+        </span>
+      </div>
+      <h3 className="text-sm font-bold uppercase tracking-wider mb-1" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
+        {title}
+      </h3>
     </div>
   );
 };

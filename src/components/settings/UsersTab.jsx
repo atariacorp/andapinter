@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { UserPlus, ChevronRight, Trash2, Shield, UserCog, User, Mail, Key } from 'lucide-react';
-import MasterDataTable from '../common/MasterDataTable';
+import { 
+  UserPlus, ChevronRight, Trash2, Shield, UserCog, 
+  User, Mail, Key, Users, Edit3, X, CheckCircle,
+  AlertCircle
+} from 'lucide-react';
 
 const UsersTab = ({ 
   usersList, 
   skpdList, 
   onAdd, 
   onDelete, 
+  onEdit,  // <-- TAMBAHKAN PROPS EDIT
   isProcessing,
   isDarkMode,
   colors 
@@ -19,7 +23,10 @@ const UsersTab = ({
     uid: '' 
   });
 
+  const [editingUser, setEditingUser] = useState(null); // State untuk user yang sedang diedit
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showSkpdDropdown, setShowSkpdDropdown] = useState(false);
+  const [showEditSkpdDropdown, setShowEditSkpdDropdown] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -31,40 +38,89 @@ const UsersTab = ({
     setNewUser({ nama: '', level: 'SKPD', skpdId: '', assignedSkpds: [], uid: '' });
   };
 
-  const handleLevelChange = (level) => {
-    setNewUser({ 
-      ...newUser, 
-      level, 
-      skpdId: '', 
-      assignedSkpds: [] 
+  const handleEditClick = (user) => {
+    setEditingUser({
+      ...user,
+      assignedSkpds: user.assignedSkpds || []
     });
+    setShowEditModal(true);
   };
 
-  const toggleSkpdSelection = (skpdId) => {
-    const current = newUser.assignedSkpds || [];
-    if (current.includes(skpdId)) {
-      setNewUser({ ...newUser, assignedSkpds: current.filter(id => id !== skpdId) });
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    if (!editingUser.nama.trim() || !editingUser.uid.trim()) {
+      alert("Lengkapi Nama dan UID");
+      return;
+    }
+    onEdit(editingUser.id, editingUser);
+    setShowEditModal(false);
+    setEditingUser(null);
+  };
+
+  const handleLevelChange = (level, isEdit = false) => {
+    if (isEdit) {
+      setEditingUser({ 
+        ...editingUser, 
+        level, 
+        skpdId: '', 
+        assignedSkpds: [] 
+      });
     } else {
-      setNewUser({ ...newUser, assignedSkpds: [...current, skpdId] });
+      setNewUser({ 
+        ...newUser, 
+        level, 
+        skpdId: '', 
+        assignedSkpds: [] 
+      });
     }
   };
 
-  const selectAllSkpd = () => {
-    if (newUser.assignedSkpds.length === skpdList.length) {
-      setNewUser({ ...newUser, assignedSkpds: [] });
+  const toggleSkpdSelection = (skpdId, isEdit = false) => {
+    if (isEdit) {
+      const current = editingUser.assignedSkpds || [];
+      if (current.includes(skpdId)) {
+        setEditingUser({ ...editingUser, assignedSkpds: current.filter(id => id !== skpdId) });
+      } else {
+        setEditingUser({ ...editingUser, assignedSkpds: [...current, skpdId] });
+      }
     } else {
-      setNewUser({ ...newUser, assignedSkpds: skpdList.map(s => s.id) });
+      const current = newUser.assignedSkpds || [];
+      if (current.includes(skpdId)) {
+        setNewUser({ ...newUser, assignedSkpds: current.filter(id => id !== skpdId) });
+      } else {
+        setNewUser({ ...newUser, assignedSkpds: [...current, skpdId] });
+      }
+    }
+  };
+
+  const selectAllSkpd = (isEdit = false) => {
+    if (isEdit) {
+      if (editingUser.assignedSkpds?.length === skpdList.length) {
+        setEditingUser({ ...editingUser, assignedSkpds: [] });
+      } else {
+        setEditingUser({ ...editingUser, assignedSkpds: skpdList.map(s => s.id) });
+      }
+    } else {
+      if (newUser.assignedSkpds.length === skpdList.length) {
+        setNewUser({ ...newUser, assignedSkpds: [] });
+      } else {
+        setNewUser({ ...newUser, assignedSkpds: skpdList.map(s => s.id) });
+      }
     }
   };
 
   const getLevelBadgeStyle = (level) => {
     switch(level) {
+      case 'Super Admin':
+        return { bg: `${colors.gold}30`, text: colors.gold, border: `${colors.gold}50` };
       case 'Admin':
         return { bg: `${colors.gold}30`, text: colors.gold, border: `${colors.gold}50` };
-      case 'Operator BKAD':
+      case 'Kepala Sub Bidang':
         return { bg: `${colors.tealDark}30`, text: colors.tealDark, border: `${colors.tealDark}50` };
-      case 'SKPD':
+      case 'Operator BKAD':
         return { bg: `${colors.tealMedium}30`, text: colors.tealMedium, border: `${colors.tealMedium}50` };
+      case 'SKPD':
+        return { bg: `${colors.tealLight}30`, text: colors.tealDark, border: colors.tealPale };
       default:
         return { bg: `${colors.tealPale}30`, text: colors.tealDark, border: colors.tealPale };
     }
@@ -150,7 +206,9 @@ const UsersTab = ({
             >
               <option value="SKPD">SKPD / Instansi</option>
               <option value="Operator BKAD">OPERATOR BKAD</option>
+              <option value="Kepala Sub Bidang">KEPALA SUB BIDANG</option>
               <option value="Admin">ADMIN</option>
+              <option value="Super Admin">SUPER ADMIN</option>
               <option value="TAPD">VIEWER / TAPD</option>
             </select>
           </div>
@@ -197,7 +255,7 @@ const UsersTab = ({
                   >
                     <button 
                       type="button" 
-                      onClick={selectAllSkpd} 
+                      onClick={() => selectAllSkpd(false)} 
                       className="w-full text-left p-3 text-xs font-bold border-b"
                       style={{ 
                         borderColor: colors.tealPale,
@@ -217,7 +275,7 @@ const UsersTab = ({
                         <input 
                           type="checkbox" 
                           checked={newUser.assignedSkpds?.includes(s.id)} 
-                          onChange={() => toggleSkpdSelection(s.id)} 
+                          onChange={() => toggleSkpdSelection(s.id, false)} 
                           className="rounded"
                           style={{ accentColor: colors.gold }}
                         />
@@ -239,7 +297,7 @@ const UsersTab = ({
                 className={`${glassInput} text-center`}
                 style={{ borderWidth: '1px', borderStyle: 'solid' }}
               >
-                Akses Admin (Global)
+                Akses {newUser.level} (Global)
               </div>
             )}
           </div>
@@ -308,22 +366,41 @@ const UsersTab = ({
                       </span>
                     </td>
                     <td className="p-4 text-xs" style={{ color: colors.tealMedium }}>
-                      {u.level === 'Admin' ? 'Global Admin' : 
-                       u.level === 'TAPD' ? 'Viewer Global' : 
+                      {u.level === 'Super Admin' ? 'Super Admin (Full Access)' : 
+                       u.level === 'Admin' ? 'Admin (System)' : 
+                       u.level === 'Kepala Sub Bidang' ? 'Approval Final' :
+                       u.level === 'Operator BKAD' ? `${u.assignedSkpds?.length || 0} Instansi` : 
                        u.level === 'SKPD' ? (skpdList.find(s => s.id === u.skpdId)?.nama || "N/A") : 
-                       `${u.assignedSkpds?.length || 0} Instansi`}
+                       'Viewer Global'}
                     </td>
                     <td className="p-4 text-center">
-                      <button 
-                        onClick={() => onDelete(u)} 
-                        className="p-2 rounded-lg transition-all hover:scale-110"
-                        style={{ 
-                          backgroundColor: `${colors.tealDark}20`,
-                          color: colors.tealDark
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        {/* Tombol EDIT */}
+                        <button 
+                          onClick={() => handleEditClick(u)} 
+                          className="p-2 rounded-lg transition-all hover:scale-110"
+                          style={{ 
+                            backgroundColor: `${colors.gold}20`,
+                            color: colors.gold
+                          }}
+                          title="Edit User"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                        
+                        {/* Tombol HAPUS */}
+                        <button 
+                          onClick={() => onDelete(u)} 
+                          className="p-2 rounded-lg transition-all hover:scale-110"
+                          style={{ 
+                            backgroundColor: `${colors.tealDark}20`,
+                            color: colors.tealDark
+                          }}
+                          title="Hapus User"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -343,6 +420,228 @@ const UsersTab = ({
           </table>
         </div>
       </div>
+
+      {/* MODAL EDIT USER */}
+      {showEditModal && editingUser && (
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4"
+          onClick={() => setShowEditModal(false)}
+        >
+          <div 
+            className="max-w-2xl w-full rounded-2xl overflow-hidden"
+            style={{ 
+              backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(16px)',
+              border: `1px solid ${colors.tealPale}`
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Modal */}
+            <div 
+              className="p-6 border-b flex justify-between items-center"
+              style={{ 
+                borderColor: colors.tealPale,
+                background: `linear-gradient(135deg, ${colors.tealDark} 0%, ${colors.tealMedium} 100%)`
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-white/20">
+                  <Edit3 size={20} className="text-white" />
+                </div>
+                <h3 className="text-white font-bold text-lg">Edit User</h3>
+              </div>
+              <button 
+                onClick={() => setShowEditModal(false)}
+                className="p-2 rounded-lg hover:bg-white/20 transition-colors"
+              >
+                <X size={18} className="text-white" />
+              </button>
+            </div>
+
+            {/* Body Modal */}
+            <div className="p-6">
+              <form onSubmit={handleEditSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                
+                {/* Nama User */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium flex items-center gap-1" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
+                    <User size={12} style={{ color: colors.gold }} />
+                    Nama Lengkap / Email
+                  </label>
+                  <input 
+                    required 
+                    value={editingUser.nama} 
+                    onChange={e => setEditingUser({...editingUser, nama: e.target.value})} 
+                    className={glassInput}
+                    style={{ borderWidth: '1px', borderStyle: 'solid' }}
+                  />
+                </div>
+                
+                {/* UID Firebase */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium flex items-center gap-1" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
+                    <Key size={12} style={{ color: colors.gold }} />
+                    UID Firebase
+                  </label>
+                  <input 
+                    required 
+                    value={editingUser.uid} 
+                    onChange={e => setEditingUser({...editingUser, uid: e.target.value})} 
+                    className={glassInput}
+                    style={{ borderWidth: '1px', borderStyle: 'solid' }}
+                  />
+                </div>
+                
+                {/* Level */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium flex items-center gap-1" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
+                    <Shield size={12} style={{ color: colors.gold }} />
+                    Level Akses
+                  </label>
+                  <select 
+                    value={editingUser.level} 
+                    onChange={e => handleLevelChange(e.target.value, true)} 
+                    className={glassInput}
+                    style={{ borderWidth: '1px', borderStyle: 'solid' }}
+                  >
+                    <option value="SKPD">SKPD / Instansi</option>
+                    <option value="Operator BKAD">OPERATOR BKAD</option>
+                    <option value="Kepala Sub Bidang">KEPALA SUB BIDANG</option>
+                    <option value="Admin">ADMIN</option>
+                    <option value="Super Admin">SUPER ADMIN</option>
+                    <option value="TAPD">VIEWER / TAPD</option>
+                  </select>
+                </div>
+                
+                {/* Scope */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium flex items-center gap-1" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
+                    <UserCog size={12} style={{ color: colors.gold }} />
+                    Scope Akses
+                  </label>
+                  
+                  {editingUser.level === 'SKPD' ? (
+                    <select 
+                      value={editingUser.skpdId || ''} 
+                      onChange={e => setEditingUser({...editingUser, skpdId: e.target.value})} 
+                      className={glassInput}
+                      style={{ borderWidth: '1px', borderStyle: 'solid' }}
+                    >
+                      <option value="">Pilih Instansi...</option>
+                      {skpdList.map(s => (
+                        <option key={s.id} value={s.id}>{String(s.nama)}</option>
+                      ))}
+                    </select>
+                  ) : editingUser.level === 'Operator BKAD' ? (
+                    <div className="relative">
+                      <button 
+                        type="button" 
+                        onClick={() => setShowEditSkpdDropdown(!showEditSkpdDropdown)}
+                        className={`${glassInput} flex justify-between items-center`}
+                        style={{ borderWidth: '1px', borderStyle: 'solid' }}
+                      >
+                        <span>{editingUser.assignedSkpds?.length || 0} Instansi Terpilih</span>
+                        <ChevronRight size={14} style={{ color: colors.gold }} className={`transition-transform ${showEditSkpdDropdown ? 'rotate-90' : ''}`} />
+                      </button>
+                      
+                      {showEditSkpdDropdown && (
+                        <div 
+                          className="absolute z-50 mt-2 w-full rounded-xl shadow-2xl max-h-60 overflow-y-auto"
+                          style={{ 
+                            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.95)' : 'white',
+                            border: `1px solid ${colors.tealPale}`,
+                            backdropFilter: 'blur(8px)'
+                          }}
+                        >
+                          <button 
+                            type="button" 
+                            onClick={() => selectAllSkpd(true)} 
+                            className="w-full text-left p-3 text-xs font-bold border-b"
+                            style={{ 
+                              borderColor: colors.tealPale,
+                              color: colors.gold
+                            }}
+                          >
+                            {editingUser.assignedSkpds?.length === skpdList.length ? 'Hapus Semua' : 'Pilih Semua Instansi'}
+                          </button>
+                          
+                          {skpdList.map(s => (
+                            <label key={s.id} className="flex items-center gap-2 p-3 hover:bg-opacity-50 text-xs cursor-pointer transition-colors"
+                              style={{ 
+                                borderBottom: `1px solid ${colors.tealPale}`,
+                                color: isDarkMode ? colors.tealLight : colors.tealDark
+                              }}
+                            >
+                              <input 
+                                type="checkbox" 
+                                checked={editingUser.assignedSkpds?.includes(s.id)} 
+                                onChange={() => toggleSkpdSelection(s.id, true)} 
+                                className="rounded"
+                                style={{ accentColor: colors.gold }}
+                              />
+                              <span>{String(s.nama)}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : editingUser.level === 'TAPD' ? (
+                    <div 
+                      className={`${glassInput} text-center`}
+                      style={{ borderWidth: '1px', borderStyle: 'solid' }}
+                    >
+                      Akses Global (Viewer)
+                    </div>
+                  ) : (
+                    <div 
+                      className={`${glassInput} text-center`}
+                      style={{ borderWidth: '1px', borderStyle: 'solid' }}
+                    >
+                      Akses {editingUser.level} (Global)
+                    </div>
+                  )}
+                </div>
+                
+                {/* Tombol Aksi */}
+                <div className="md:col-span-2 flex justify-end gap-3 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-105"
+                    style={{ 
+                      backgroundColor: isDarkMode ? colors.tealMedium : colors.tealPale,
+                      color: isDarkMode ? colors.tealLight : colors.tealDark
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isProcessing}
+                    className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-105 disabled:opacity-50 flex items-center gap-2"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${colors.gold} 0%, ${colors.tealDark} 100%)`,
+                      color: 'white'
+                    }}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <span className="animate-spin">⟳</span>
+                        MENYIMPAN...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle size={14} />
+                        SIMPAN PERUBAHAN
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

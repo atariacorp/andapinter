@@ -244,6 +244,7 @@ const ProposalListView = ({
 
   const { tahapList = [], tahunList = [] } = masterData || {};
 
+  
   // Palet warna teal & gold
   const colors = {
     tealDark: '#425c5a',
@@ -252,6 +253,40 @@ const ProposalListView = ({
     tealPale: '#cadfdf',
     gold: '#d7a217'
   };
+
+  // ===== FILTER BERDASARKAN LEVEL USER =====
+const userLevelFilteredProposals = useMemo(() => {
+  return filteredProposals.filter(p => {
+    const userLevel = currentUserProfile?.level;
+    
+    // Super Admin dan Admin bisa melihat semua usulan
+    if (userLevel === 'Super Admin' || userLevel === 'Admin') {
+      return true;
+    }
+    
+    // Operator BKAD: hanya melihat usulan dengan status Pending
+    if (userLevel === 'Operator BKAD') {
+      return p.status === 'Pending';
+    }
+    
+    // Kepala Sub Bidang: hanya melihat usulan yang sudah diverifikasi
+    if (userLevel === 'Kepala Sub Bidang') {
+      return p.status === 'Diverifikasi';
+    }
+    
+    // SKPD: hanya melihat usulan milik SKPD sendiri
+    if (userLevel === 'SKPD') {
+      return p.skpdId === currentUserProfile?.skpdId;
+    }
+    
+    // TAPD/Viewer: bisa melihat semua tapi tidak bisa mengubah
+    if (userLevel === 'TAPD' || userLevel === 'Viewer') {
+      return true;
+    }
+    
+    return false;
+  });
+}, [filteredProposals, currentUserProfile]);
 
   // Pagination logic
   const currentData = useMemo(() => {
@@ -450,7 +485,32 @@ const ProposalListView = ({
                 <th className="p-4 text-center">Tindakan</th>
               </tr>
             </thead>
-            
+
+        {/* Info Panel - Menampilkan Level User dan Jumlah Data */}
+<div className={`${glassCard} p-4 mb-2 flex justify-between items-center`}>
+  <div className="flex items-center gap-3">
+    <div className="w-8 h-8 rounded-lg bg-[#d7a217]/20 flex items-center justify-center">
+      <Settings2 size={16} className="text-[#d7a217]" />
+    </div>
+    <div>
+      <span className="text-sm font-bold" style={{ color: colors.tealDark }}>
+        Akses sebagai: <span style={{ color: colors.gold }}>{currentUserProfile?.level}</span>
+      </span>
+      <p className="text-xs mt-1" style={{ color: colors.tealMedium }}>
+        Menampilkan {userLevelFilteredProposals.length} dari {filteredProposals.length} usulan
+        {currentUserProfile?.level === 'Operator BKAD' && ' (Pending)'}
+        {currentUserProfile?.level === 'Kepala Sub Bidang' && ' (Menunggu Persetujuan)'}
+      </p>
+    </div>
+  </div>
+  <div className="text-xs px-3 py-1 rounded-full" style={{ 
+    backgroundColor: `${colors.gold}20`,
+    color: colors.gold
+  }}>
+    {currentUserProfile?.level}
+  </div>
+</div>
+
             <tbody className={`divide-y ${isDarkMode ? 'divide-[#cadfdf]/10' : 'divide-[#cadfdf]/40'}`}>
               {currentData.map(p => {
                 const rincianList = p.rincian && p.rincian.length > 0 
@@ -484,25 +544,30 @@ const ProposalListView = ({
               })}
               
               {currentData.length === 0 && (
-                <tr>
-                  <td 
-                    colSpan={['Admin', 'Operator BKAD'].includes(currentUserProfile?.level) ? 12 : 11} 
-                    className="p-24 text-center"
-                  >
-                    <div className="flex flex-col items-center justify-center opacity-60">
-                      <div className="w-20 h-20 rounded-full bg-[#d7a217]/10 flex items-center justify-center mb-4 shadow-inner border border-[#d7a217]/20">
-                        <Search size={32} className="text-[#d7a217]" />
-                      </div>
-                      <p className="text-base font-black uppercase tracking-widest text-[#425c5a] dark:text-[#cadfdf]">
-                        Data Kosong
-                      </p>
-                      <p className="text-xs font-medium text-[#3c5654]/70 dark:text-[#cadfdf]/70 mt-1">
-                        Tidak ada usulan yang cocok dengan parameter filter Anda.
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              )}
+  <tr>
+    <td colSpan={['Admin', 'Operator BKAD', 'Super Admin', 'Kepala Sub Bidang'].includes(currentUserProfile?.level) ? 12 : 11} 
+        className="p-24 text-center">
+      <div className="flex flex-col items-center justify-center opacity-60">
+        <div className="w-20 h-20 rounded-full bg-[#d7a217]/10 flex items-center justify-center mb-4 shadow-inner border border-[#d7a217]/20">
+          <Search size={32} className="text-[#d7a217]" />
+        </div>
+        <p className="text-base font-black uppercase tracking-widest text-[#425c5a] dark:text-[#cadfdf]">
+          Data Kosong
+        </p>
+        <p className="text-xs font-medium text-[#3c5654]/70 dark:text-[#cadfdf]/70 mt-1">
+          {currentUserProfile?.level === 'Operator BKAD' && 'Tidak ada usulan Pending yang perlu diverifikasi'}
+          {currentUserProfile?.level === 'Kepala Sub Bidang' && 'Tidak ada usulan yang perlu disetujui'}
+          {currentUserProfile?.level === 'SKPD' && 'Belum ada usulan dari instansi Anda'}
+          {currentUserProfile?.level === 'Super Admin' && 'Tidak ada usulan yang cocok dengan filter'}
+          {currentUserProfile?.level === 'Admin' && 'Tidak ada usulan yang cocok dengan filter'}
+          {currentUserProfile?.level === 'TAPD' && 'Tidak ada usulan yang cocok dengan filter'}
+          {!['Operator BKAD', 'Kepala Sub Bidang', 'SKPD', 'Super Admin', 'Admin', 'TAPD'].includes(currentUserProfile?.level) && 
+            'Tidak ada usulan yang cocok dengan parameter filter Anda.'}
+        </p>
+      </div>
+    </td>
+  </tr>
+)}
             </tbody>
           </table>
         </div>

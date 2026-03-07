@@ -7,12 +7,29 @@ export const STATUS_STYLES = {
   'Ditolak': 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800/50'
 };
 
+// Tambahkan level user baru
 export const USER_LEVELS = {
-  ADMIN: 'Admin',
+  SUPER_ADMIN: 'Super Admin',
+  KASUBID: 'Kepala Sub Bidang',
   OPERATOR: 'Operator BKAD',
   SKPD: 'SKPD',
-  TAPD: 'TAPD',
   VIEWER: 'Viewer'
+};
+
+// Hierarchy untuk perbandingan level
+export const LEVEL_HIERARCHY = {
+  'Super Admin': 100,
+  'Kepala Sub Bidang': 80,
+  'Operator BKAD': 60,
+  'SKPD': 40,
+  'Viewer': 20
+};
+
+// Helper function untuk cek akses
+export const canAccess = (userLevel, requiredLevel) => {
+  const userRank = LEVEL_HIERARCHY[userLevel] || 0;
+  const requiredRank = LEVEL_HIERARCHY[requiredLevel] || 0;
+  return userRank >= requiredRank;
 };
 
 export const DEFAULT_BRANDING = {
@@ -22,6 +39,36 @@ export const DEFAULT_BRANDING = {
   subTagline: 'Badan Keuangan dan Aset Daerah Kota Medan',
   icon: 'A',
   logoUrl: ''
+};
+
+// Alur status usulan
+export const PROPOSAL_FLOW = {
+  // Status yang mungkin
+  STATUS: {
+    PENDING: 'Pending',
+    VERIFIED: 'Diverifikasi',
+    REJECTED_OPERATOR: 'Ditolak Operator',
+    APPROVED: 'Disetujui',
+    REJECTED_KASUBID: 'Ditolak Kasubid'
+  },
+  
+  // Status yang bisa diubah oleh masing-masing level
+  ALLOWED_TRANSITIONS: {
+    'SKPD': ['Pending'], // SKPD hanya bisa membuat status Pending
+    'Operator BKAD': ['Diverifikasi', 'Ditolak Operator'], // Operator bisa verifikasi atau tolak
+    'Kepala Sub Bidang': ['Disetujui', 'Ditolak Kasubid'], // Kasubid bisa setujui atau tolak final
+    'Super Admin': ['Disetujui', 'Ditolak Kasubid', 'Diverifikasi', 'Ditolak Operator'], // Super Admin bisa semua
+    'Admin': ['Disetujui', 'Ditolak Kasubid', 'Diverifikasi', 'Ditolak Operator'] // Admin legacy
+  },
+  
+  // Status yang bisa dilihat oleh masing-masing level
+  VISIBLE_STATUS: {
+    'SKPD': ['Pending', 'Diverifikasi', 'Ditolak Operator', 'Disetujui', 'Ditolak Kasubid'],
+    'Operator BKAD': ['Pending', 'Diverifikasi', 'Ditolak Operator'],
+    'Kepala Sub Bidang': ['Diverifikasi', 'Disetujui', 'Ditolak Kasubid'],
+    'Super Admin': ['Pending', 'Diverifikasi', 'Ditolak Operator', 'Disetujui', 'Ditolak Kasubid'],
+    'Admin': ['Pending', 'Diverifikasi', 'Ditolak Operator', 'Disetujui', 'Ditolak Kasubid']
+  }
 };
 
 // Palet warna coklat modern

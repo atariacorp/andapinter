@@ -8,11 +8,11 @@ import {
   getDocs,
   writeBatch,
   setDoc,
-  updateDoc  // <-- TAMBAHKAN INI
+  updateDoc
 } from 'firebase/firestore';
 import { db, appId } from '../utils/firebase';
 
-export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN PARAMETER currentUserProfile
+export const useMasterData = (user, currentUserProfile) => {
   const [skpdList, setSkpdList] = useState([]);
   const [subKegList, setSubKegList] = useState([]);
   const [tahapList, setTahapList] = useState([]);
@@ -136,7 +136,9 @@ export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN P
     };
   }, [user]);
 
-  // CRUD Operations
+  // ========== CRUD OPERATIONS ==========
+
+  // SKPD
   const addSkpd = async (nama) => {
     if (!nama.trim() || !user) return;
     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'skpds'), { 
@@ -155,6 +157,7 @@ export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN P
     });
   };
 
+  // Sub Kegiatan
   const addSubKeg = async (nama) => {
     if (!nama.trim() || !user) return;
     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'sub_kegiatans'), { 
@@ -173,6 +176,7 @@ export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN P
     });
   };
 
+  // Tahap
   const addTahap = async (nama) => {
     if (!nama.trim() || !user) return;
     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tahapan'), { 
@@ -181,6 +185,7 @@ export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN P
     });
   };
 
+  // Tahun
   const addTahun = async (tahun, createdBy) => {
     if (!tahun.trim() || !user) return;
     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tahun_anggaran'), { 
@@ -191,6 +196,7 @@ export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN P
     });
   };
 
+  // TAPD
   const addTapd = async (data) => {
     if (!data.nama.trim() || !data.nip.trim() || !data.jabatan.trim() || !user) return;
     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tapd'), { 
@@ -199,6 +205,7 @@ export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN P
     });
   };
 
+  // USERS
   const addUser = async (data) => {
     if (!data.nama.trim() || !data.uid.trim() || !user) return;
     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), { 
@@ -207,6 +214,25 @@ export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN P
     });
   };
 
+  // ===== FUNGSI UPDATE USER (TAMBAHKAN INI) =====
+  const updateUser = async (id, updatedData) => {
+    if (!id || !user) return;
+    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', String(id));
+    
+    const dataToSave = {
+      nama: updatedData.nama,
+      uid: updatedData.uid,
+      level: updatedData.level,
+      skpdId: updatedData.skpdId || '',
+      assignedSkpds: updatedData.assignedSkpds || [],
+      updatedAt: new Date().toISOString(),
+      updatedBy: currentUserProfile?.nama || 'System'
+    };
+    
+    await updateDoc(userRef, dataToSave);
+  };
+
+  // Bank Catatan
   const addBankCatatan = async (judul, isi, createdBy) => {
     if (!judul.trim() || !isi.trim() || !user) return;
     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'bank_catatan'), {
@@ -217,6 +243,7 @@ export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN P
     });
   };
 
+  // Bank SRO
   const addBankSro = async (kode, uraian, createdBy) => {
     if (!kode.trim() || !uraian.trim() || !user) return;
     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'bank_sro'), {
@@ -227,6 +254,7 @@ export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN P
     });
   };
 
+  // Delete Item
   const deleteItem = async (type, id) => {
     if (!user || !id) return;
     
@@ -247,11 +275,11 @@ export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN P
     }
   };
 
+  // Save Branding
   const saveBranding = async (data) => {
     if (!user) return;
     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'app_branding');
     
-    // Pastikan nilai default jika tidak diisi
     const dataToSave = {
       ...data,
       deadlineDays: data.deadlineDays || 7,
@@ -267,6 +295,7 @@ export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN P
     setBrandingForm(dataToSave);
   };
 
+  // Import SRO Batch
   const importSroBatch = async (data, batchSize = 250, delay = 800) => {
     const batches = Math.ceil(data.length / batchSize);
     let success = 0;
@@ -313,13 +342,14 @@ export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN P
     
     // CRUD Operations
     addSkpd,
-    updateSkpd,  // <-- TAMBAHKAN
+    updateSkpd,
     addSubKeg,
-    updateSubKeg,  // <-- TAMBAHKAN
+    updateSubKeg,
     addTahap,
     addTahun,
     addTapd,
     addUser,
+    updateUser,  // <-- TAMBAHKAN INI
     addBankCatatan,
     addBankSro,
     deleteItem,

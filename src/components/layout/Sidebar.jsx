@@ -12,12 +12,18 @@ import {
   LogOut,
   X,
   Coffee,
-  Leaf
+  Leaf,
+  Users,
+  Shield,
+  UserCog,
+  BarChart3,
+  CalendarClock,
+  FileCheck
 } from 'lucide-react';
 import NavItem from '../common/NavItem';
 import NotificationBell from '../common/NotificationBell';
 
-// Definisikan palet warna di sini
+// Definisikan palet warna
 const colors = {
   tealDark: '#425c5a',
   tealMedium: '#3c5654',
@@ -41,6 +47,16 @@ const Sidebar = ({
   notifications,
   unreadCount
 }) => {
+  
+  // Cek level user untuk menentukan menu yang ditampilkan
+  const userLevel = currentUserProfile?.level;
+  const isSuperAdmin = userLevel === 'Super Admin';
+  const isAdmin = userLevel === 'Admin' || isSuperAdmin; // Admin termasuk Super Admin
+  const isKasubid = userLevel === 'Kepala Sub Bidang';
+  const isOperator = userLevel === 'Operator BKAD';
+  const isSkpd = userLevel === 'SKPD';
+  const isViewer = userLevel === 'TAPD' || userLevel === 'Viewer';
+
   return (
     <>
       {/* Overlay untuk mobile */}
@@ -56,23 +72,23 @@ const Sidebar = ({
         isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
       }`}>
         
-        {/* Background dengan gradasi coklat */}
+        {/* Background dengan gradasi */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#3d2b1a] via-[#4f3822] to-[#2c1e12]"></div>
         
-        {/* Pattern overlay (subtle) */}
+        {/* Pattern overlay */}
         <div className="absolute inset-0 opacity-5" style={{
           backgroundImage: `radial-gradient(circle at 20px 20px, #d7a370 2px, transparent 2px)`,
           backgroundSize: '40px 40px'
         }}></div>
         
-        {/* Content dengan posisi relative agar di atas background */}
+        {/* Content */}
         <div className="relative flex flex-col h-full z-10">
           
           {/* Header Sidebar dengan Logo */}
           <div className="p-6 border-b border-[#d7a370]/20">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {/* Logo dengan efek glow */}
+                {/* Logo */}
                 <div className="relative">
                   <div className="absolute inset-0 bg-[#b87e4f] rounded-xl blur-md opacity-50"></div>
                   {branding.logoUrl ? (
@@ -88,7 +104,7 @@ const Sidebar = ({
                   )}
                 </div>
                 
-                {/* Nama Aplikasi dengan efek gradasi */}
+                {/* Nama Aplikasi */}
                 <div>
                   <span className="text-xl font-black tracking-tight text-white">
                     {branding.name1}
@@ -112,8 +128,10 @@ const Sidebar = ({
             </div>
           </div>
 
-          {/* Navigation Menu dengan efek hover */}
+          {/* Navigation Menu */}
           <nav className="p-4 space-y-1.5 flex-grow overflow-y-auto scrollbar-hide">
+            
+            {/* Dashboard - SEMUA LEVEL */}
             <NavItem 
               active={view === 'dashboard'} 
               icon={<LayoutDashboard size={18}/>} 
@@ -124,6 +142,7 @@ const Sidebar = ({
               }} 
             />
             
+            {/* Daftar Berkas - SEMUA LEVEL */}
             <NavItem 
               active={view === 'list' || view === 'detail' || view === 'add-proposal'} 
               icon={<FileText size={18}/>} 
@@ -134,6 +153,62 @@ const Sidebar = ({
               }} 
             />
             
+            {/* Menu Khusus untuk KEPALA SUB BIDANG */}
+            {isKasubid && (
+              <NavItem 
+                active={view === 'approval'} 
+                icon={<FileCheck size={18}/>} 
+                label="Persetujuan Akhir" 
+                onClick={() => { 
+                  setView('list'); 
+                  // Set filter ke status Diverifikasi
+                  // Implementasi filter akan ditambahkan nanti
+                  setIsMobileMenuOpen(false); 
+                }} 
+              />
+            )}
+            
+            {/* Menu Khusus untuk OPERATOR */}
+            {isOperator && (
+              <NavItem 
+                active={view === 'verification'} 
+                icon={<FileCheck size={18}/>} 
+                label="Verifikasi Berkas" 
+                onClick={() => { 
+                  setView('list'); 
+                  // Set filter ke status Pending
+                  setIsMobileMenuOpen(false); 
+                }} 
+              />
+            )}
+            
+            {/* Menu Khusus untuk SUPER ADMIN / ADMIN */}
+            {(isSuperAdmin || isAdmin) && (
+              <>
+                <NavItem 
+                  active={view === 'users-management'} 
+                  icon={<Users size={18}/>} 
+                  label="Manajemen User" 
+                  onClick={() => { 
+                    setView('settings'); 
+                    // Set tab ke users
+                    setIsMobileMenuOpen(false); 
+                  }} 
+                />
+                
+                <NavItem 
+                  active={view === 'audit-log'} 
+                  icon={<History size={18}/>} 
+                  label="Audit Log" 
+                  onClick={() => { 
+                    setView('logs'); 
+                    setIsMobileMenuOpen(false); 
+                  }} 
+                />
+              </>
+            )}
+            
+            {/* Panduan Sistem - SEMUA LEVEL */}
             <NavItem 
               active={view === 'panduan'} 
               icon={<BookOpen size={18}/>} 
@@ -144,8 +219,8 @@ const Sidebar = ({
               }} 
             />
             
-            {/* Storage Management - Hanya untuk Admin */}
-            {currentUserProfile?.level === 'Admin' && (
+            {/* Storage Management - Hanya SUPER ADMIN dan ADMIN */}
+            {(isSuperAdmin || isAdmin) && (
               <NavItem 
                 active={view === 'storage'} 
                 icon={<Database size={18}/>} 
@@ -157,8 +232,8 @@ const Sidebar = ({
               />
             )}
             
-            {/* History Log - Hanya untuk Admin */}
-            {currentUserProfile?.level === 'Admin' && (
+            {/* History Log - Hanya SUPER ADMIN dan ADMIN */}
+            {(isSuperAdmin || isAdmin) && (
               <NavItem 
                 active={view === 'logs'} 
                 icon={<History size={18}/>} 
@@ -174,8 +249,8 @@ const Sidebar = ({
           {/* Footer Sidebar */}
           <div className="relative p-4 border-t border-[#d7a370]/20 space-y-3">
             
-            {/* Settings - Hanya untuk Admin */}
-            {currentUserProfile?.level === 'Admin' && (
+            {/* Settings - Hanya SUPER ADMIN dan ADMIN */}
+            {(isSuperAdmin || isAdmin) && (
               <NavItem 
                 active={view === 'settings'} 
                 icon={<Settings size={18}/>} 
@@ -187,12 +262,12 @@ const Sidebar = ({
               />
             )}
             
-            {/* Notifikasi dengan Bell Baru */}
+            {/* Notifikasi */}
             <div className="relative">
               <NotificationBell isDarkMode={isDarkMode} colors={colors} />
             </div>
 
-            {/* Dark Mode Toggle dengan desain coklat */}
+            {/* Dark Mode Toggle */}
             <button 
               onClick={toggleDarkMode} 
               className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-[#4f3822]/30 hover:bg-[#7b5435]/30 text-[#e6c3a0] hover:text-white transition-all duration-300 font-bold text-xs uppercase tracking-widest border border-[#d7a370]/20"
@@ -210,7 +285,7 @@ const Sidebar = ({
               )}
             </button>
 
-            {/* Profile Card dengan desain coklat */}
+            {/* Profile Card */}
             <div className="p-4 bg-gradient-to-br from-[#4f3822]/80 to-[#2c1e12]/80 rounded-2xl border border-[#d7a370]/30 backdrop-blur-sm">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#b87e4f] to-[#7b5435] flex items-center justify-center text-white font-black shadow-lg">
@@ -220,19 +295,35 @@ const Sidebar = ({
                   <p className="text-xs font-black text-white truncate leading-none mb-1">
                     {String(currentUserProfile?.nama || "User")}
                   </p>
-                  <p className="text-[8px] text-[#e6c3a0] font-black uppercase tracking-widest">
-                    {String(currentUserProfile?.level || "Viewer")}
-                  </p>
+                  <div className="flex items-center gap-1">
+                    <Shield size={10} className="text-[#d7a217]" />
+                    <p className="text-[8px] text-[#e6c3a0] font-black uppercase tracking-widest">
+                      {String(currentUserProfile?.level || "Viewer")}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Tombol Logout - MERAH DENGAN TAILWIND */}
+              {/* Tombol Logout - MERAH DENGAN GLASSMORPHISM */}
               <button 
-              onClick={onLogout} 
-              className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 hover:text-rose-600 transition-all duration-300 font-bold text-[10px] uppercase tracking-widest border border-rose-500/30 hover:border-rose-500/50 backdrop-blur-md"
+                onClick={onLogout} 
+                className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl backdrop-blur-md transition-all duration-300 font-bold text-[10px] uppercase tracking-widest border group"
+                style={{ 
+                  backgroundColor: isDarkMode ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.15)',
+                  borderColor: 'rgba(239, 68, 68, 0.3)',
+                  color: '#ef4444'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(239, 68, 68, 0.3)' : 'rgba(239, 68, 68, 0.25)';
+                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.15)';
+                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                }}
               >
-              <LogOut size={14}/> Keluar Akun
-            </button>
+                <LogOut size={14}/> Keluar Akun
+              </button>
             </div>
 
             {/* Decorative Elements */}
