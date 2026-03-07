@@ -257,6 +257,10 @@ const cleanupOrphanFiles = async () => {
         backupAllFiles={backupAllFiles}
         restoreFromBackup={restoreFromBackup}
         cleanupOrphanFiles={cleanupOrphanFiles}
+        activityLogs={activityLogs}
+        loadingLogs={loadingLogs}
+        refreshLogs={refreshLogs}
+        addActivityLog={addActivityLog}
       />
 
       <DeleteConfirmModal

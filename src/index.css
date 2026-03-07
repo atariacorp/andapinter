@@ -28,35 +28,119 @@
   transition-timing-function: ease;
 }
 
-/* Custom scrollbar for brown theme */
+/* Custom scrollbar for teal theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f0e9db;
+  background: #cadfdf;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #b48c5c;
+  background: #425c5a;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #8b6b4c;
+  background: #3c5654;
 }
 
 /* Dark mode scrollbar */
 .dark ::-webkit-scrollbar-track {
-  background: #362b21;
+  background: #3c5654;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #6d5340;
+  background: #d7a217;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #8b6b4c;
+  background: #b8860b;
+}
+
+/* Glassmorphism Effects with Teal */
+.glass {
+  background: rgba(202, 223, 223, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(215, 162, 23, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(66, 92, 90, 0.1);
+}
+
+.glass-dark {
+  background: rgba(60, 86, 84, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(215, 162, 23, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+.glass-card {
+  background: rgba(226, 236, 235, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(215, 162, 23, 0.3);
+  box-shadow: 0 20px 40px -15px rgba(66, 92, 90, 0.2);
+}
+
+.dark .glass-card {
+  background: rgba(60, 86, 84, 0.5);
+  border: 1px solid rgba(215, 162, 23, 0.2);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.3);
+}
+
+/* Smooth animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 3s ease-in-out infinite;
+}
+
+/* Teal & Gold utility classes */
+.bg-teal-primary {
+  background-color: #425c5a;
+}
+
+.bg-teal-secondary {
+  background-color: #3c5654;
+}
+
+.bg-teal-light {
+  background-color: #e2eceb;
+}
+
+.bg-teal-lighter {
+  background-color: #cadfdf;
+}
+
+.text-gold {
+  color: #d7a217;
+}
+
+.border-gold {
+  border-color: #d7a217;
+}
+
+/* Gradient utilities */
+.bg-gradient-teal-gold {
+  background: linear-gradient(135deg, #425c5a 0%, #3c5654 100%);
+}
+
+.bg-gradient-gold {
+  background: linear-gradient(135deg, #d7a217 0%, #b8860b 100%);
 }

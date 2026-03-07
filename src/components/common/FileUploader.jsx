@@ -8,7 +8,9 @@ const FileUploader = ({
   uploading,
   uploadProgress,
   error,
-  disabled 
+  disabled,
+  isDarkMode,
+  colors
 }) => {
   return (
     <div className="space-y-4">
@@ -23,23 +25,35 @@ const FileUploader = ({
           disabled={uploading || disabled}
         />
         
-        <div className={`w-full p-4 border-2 border-dashed rounded-xl text-sm bg-slate-50 dark:bg-slate-900/50 outline-none flex flex-col items-center justify-center transition-colors ${
-          file 
-            ? 'border-green-300 dark:border-green-800 bg-green-50/30 dark:bg-green-900/10' 
-            : 'border-blue-300 dark:border-blue-800 hover:border-blue-500 dark:hover:border-blue-500'
-        }`}>
+        <div 
+          className={`w-full p-4 border-2 border-dashed rounded-xl outline-none flex flex-col items-center justify-center transition-all ${
+            file ? 'border-opacity-50' : 'hover:border-opacity-70'
+          }`}
+          style={{ 
+            borderColor: file ? colors.gold : colors.tealPale,
+            backgroundColor: file 
+              ? `${colors.gold}10` 
+              : (isDarkMode ? 'rgba(60, 86, 84, 0.2)' : 'rgba(255, 255, 255, 0.5)')
+          }}
+        >
 
           {uploading ? (
             // Progress Upload
             <div className="w-full text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+              <div 
+                className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-2"
+                style={{ borderColor: colors.gold }}
+              ></div>
+              <p className="text-xs font-medium mb-2" style={{ color: colors.tealMedium }}>
                 Mengupload... {Math.round(uploadProgress)}%
               </p>
-              <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+              <div className="w-full rounded-full h-2 overflow-hidden" style={{ backgroundColor: colors.tealPale }}>
                 <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                  style={{ width: `${uploadProgress}%` }}
+                  className="h-2 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${uploadProgress}%`,
+                    backgroundColor: colors.gold
+                  }}
                 ></div>
               </div>
             </div>
@@ -48,27 +62,28 @@ const FileUploader = ({
             <div className="w-full text-center">
               {/* Indikator Jenis File */}
               <div className="flex items-center justify-between w-full mb-3">
-                <span className={`text-[8px] px-3 py-1 rounded-full font-black uppercase tracking-wider ${
-                  file.type === 'application/pdf' 
-                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800' 
-                    : file.type?.startsWith('image/')
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800'
-                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
-                }`}>
+                <span 
+                  className="text-[8px] px-3 py-1 rounded-full font-black uppercase tracking-wider"
+                  style={{ 
+                    backgroundColor: `${colors.gold}20`,
+                    color: colors.gold,
+                    border: `1px solid ${colors.gold}40`
+                  }}
+                >
                   {file.type === 'application/pdf' ? '📄 PDF' : 
                    file.type?.startsWith('image/') ? '🖼️ GAMBAR' : 
                    '📎 FILE'}
                 </span>
-                <span className="text-[8px] text-slate-400 dark:text-slate-500">
+                <span className="text-[8px]" style={{ color: colors.tealMedium }}>
                   {(file.size / 1024).toFixed(1)} KB
                 </span>
               </div>
               
-              <FileCheck size={32} className="mx-auto mb-2 text-green-500" />
-              <p className="text-xs font-bold text-green-600 dark:text-green-400 mb-1 truncate max-w-full">
+              <FileCheck size={32} className="mx-auto mb-2" style={{ color: colors.gold }} />
+              <p className="text-xs font-bold mb-1 truncate max-w-full" style={{ color: colors.tealDark }}>
                 {file.name}
               </p>
-              <p className="text-[9px] text-slate-500 dark:text-slate-400 mb-3">
+              <p className="text-[9px] mb-3" style={{ color: colors.tealMedium }}>
                 {file.uploadedAt ? new Date(file.uploadedAt).toLocaleDateString('id-ID', {
                   day: 'numeric',
                   month: 'long',
@@ -80,14 +95,22 @@ const FileUploader = ({
                   href={file.url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                  className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 transition-all hover:scale-105"
+                  style={{ 
+                    backgroundColor: `${colors.tealDark}20`,
+                    color: colors.tealDark
+                  }}
                 >
                   <Download size={12} /> LIHAT
                 </a>
                 <button
                   type="button"
                   onClick={onRemove}
-                  className="px-3 py-1.5 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 hover:bg-rose-200 dark:hover:bg-rose-800 transition-colors"
+                  className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 transition-all hover:scale-105"
+                  style={{ 
+                    backgroundColor: `${colors.gold}20`,
+                    color: colors.gold
+                  }}
                 >
                   <Trash2 size={12} /> HAPUS
                 </button>
@@ -96,11 +119,11 @@ const FileUploader = ({
           ) : (
             // Belum ada file
             <>
-              <Upload size={32} className="mx-auto mb-2 text-blue-400" />
-              <p className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">
+              <Upload size={32} className="mx-auto mb-2" style={{ color: colors.gold }} />
+              <p className="text-xs font-bold mb-1" style={{ color: colors.tealDark }}>
                 Pilih File PDF / Gambar
               </p>
-              <p className="text-[9px] text-slate-400 dark:text-slate-500">
+              <p className="text-[9px]" style={{ color: colors.tealMedium }}>
                 Maksimal 2MB • Format: PDF, JPG, PNG
               </p>
             </>
@@ -110,7 +133,14 @@ const FileUploader = ({
 
       {/* Error Message */}
       {error && (
-        <div className="p-2 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg text-[9px] text-rose-600 dark:text-rose-400">
+        <div 
+          className="p-2 rounded-lg text-[9px]"
+          style={{ 
+            backgroundColor: '#ef444420',
+            border: '1px solid #ef444440',
+            color: '#b91c1c'
+          }}
+        >
           Error: {error}
         </div>
       )}

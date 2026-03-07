@@ -1,13 +1,37 @@
 import React from 'react';
 
-// Style untuk setiap status
+// Style untuk setiap status dengan warna yang diminta
 const STATUS_STYLES = {
-  'Pending': 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/50',
-  'Diverifikasi': 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50',
-  'Disetujui': 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50',
-  'Ditolak Operator': 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800/50',
-  'Ditolak Admin': 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800/50',
-  'Ditolak': 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800/50'
+  'Pending': {
+    bg: 'rgba(251, 191, 36, 0.15)', // Amber-400 dengan opacity
+    text: '#d97706', // Amber-600
+    border: 'rgba(251, 191, 36, 0.3)'
+  },
+  'Diverifikasi': {
+    bg: 'rgba(99, 102, 241, 0.15)', // Indigo-500 dengan opacity
+    text: '#4f46e5', // Indigo-600
+    border: 'rgba(99, 102, 241, 0.3)'
+  },
+  'Disetujui': {
+    bg: 'rgba(16, 185, 129, 0.15)', // Emerald-500 dengan opacity
+    text: '#059669', // Emerald-600
+    border: 'rgba(16, 185, 129, 0.3)'
+  },
+  'Ditolak Operator': {
+    bg: 'rgba(244, 63, 94, 0.15)', // Rose-500 dengan opacity
+    text: '#e11d48', // Rose-600
+    border: 'rgba(244, 63, 94, 0.3)'
+  },
+  'Ditolak Admin': {
+    bg: 'rgba(244, 63, 94, 0.15)', // Rose-500 dengan opacity
+    text: '#e11d48', // Rose-600
+    border: 'rgba(244, 63, 94, 0.3)'
+  },
+  'Ditolak': {
+    bg: 'rgba(244, 63, 94, 0.15)', // Rose-500 dengan opacity
+    text: '#e11d48', // Rose-600
+    border: 'rgba(244, 63, 94, 0.3)'
+  }
 };
 
 const StatusBadge = ({ status }) => {
@@ -15,7 +39,14 @@ const StatusBadge = ({ status }) => {
   const style = STATUS_STYLES[statusKey] || STATUS_STYLES['Pending'];
   
   return (
-    <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black border uppercase tracking-widest shadow-sm ${style}`}>
+    <span 
+      className="px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm inline-flex items-center justify-center backdrop-blur-sm transition-all duration-300 hover:shadow-md"
+      style={{ 
+        backgroundColor: style.bg,
+        color: style.text,
+        border: `1px solid ${style.border}`
+      }}
+    >
       {statusKey}
     </span>
   );

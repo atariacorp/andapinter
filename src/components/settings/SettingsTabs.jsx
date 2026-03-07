@@ -1,40 +1,110 @@
 import React from 'react';
 import { 
   Building2, Database, Layers, CalendarDays, Users, 
-  Palette, FileSpreadsheet, UserCog, Settings 
+  Palette, FileSpreadsheet, UserCog, Sparkles
 } from 'lucide-react';
 
-const SettingsTabs = ({ activeTab, onTabChange }) => {
+// Default colors
+const defaultColors = {
+  tealDark: '#425c5a',
+  tealMedium: '#3c5654',
+  tealLight: '#e2eceb',
+  tealPale: '#cadfdf',
+  gold: '#d7a217'
+};
+
+const SettingsTabs = ({ 
+  activeTab, 
+  onTabChange, 
+  isDarkMode = false, 
+  colors = defaultColors 
+}) => {
   const tabs = [
-    { id: 'master-skpd', label: 'DATABASE INSTANSI', icon: <Building2 size={14} /> },
-    { id: 'sub-keg', label: 'DATABASE SUB KEG', icon: <Database size={14} /> },
-    { id: 'tahap', label: 'TAHAP PENGAJUAN', icon: <Layers size={14} /> },
-    { id: 'tahun', label: 'TAHUN ANGGARAN', icon: <CalendarDays size={14} /> },
-    { id: 'tapd', label: 'TAPD', icon: <UserCog size={14} /> },
-    { id: 'users', label: 'MANAJEMEN USER', icon: <Users size={14} /> },
-    { id: 'bank_sro', label: 'BANK SRO', icon: <FileSpreadsheet size={14} /> },
-    { id: 'branding', label: 'KUSTOMISASI', icon: <Palette size={14} /> }
+    { id: 'master-skpd', label: 'INSTANSI', icon: <Building2 size={16} />, desc: 'Master SKPD' },
+    { id: 'sub-keg', label: 'SUB KEGIATAN', icon: <Database size={16} />, desc: 'Database Sub Kegiatan' },
+    { id: 'tahap', label: 'TAHAP', icon: <Layers size={16} />, desc: 'Tahap Pengajuan' },
+    { id: 'tahun', label: 'TAHUN', icon: <CalendarDays size={16} />, desc: 'Tahun Anggaran' },
+    { id: 'tapd', label: 'TAPD', icon: <UserCog size={16} />, desc: 'Tim Anggaran' },
+    { id: 'users', label: 'USER', icon: <Users size={16} />, desc: 'Manajemen User' },
+    { id: 'bank_sro', label: 'BANK SRO', icon: <FileSpreadsheet size={16} />, desc: 'Kode Rekening' },
+    { id: 'branding', label: 'KUSTOMISASI', icon: <Palette size={16} />, desc: 'Tampilan Aplikasi' }
   ];
 
   return (
-    <div className="flex border-b border-slate-200 dark:border-slate-700 gap-8 mb-6 overflow-x-auto scrollbar-hide">
-      {tabs.map(tab => (
-        <button
-          key={tab.id}
-          onClick={() => onTabChange(tab.id)}
-          className={`pb-4 text-[10px] font-black relative whitespace-nowrap uppercase tracking-widest flex items-center gap-1.5 transition-colors ${
-            activeTab === tab.id 
-              ? 'text-blue-600 dark:text-blue-400' 
-              : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-          }`}
-        >
-          {tab.icon}
-          {tab.label}
-          {activeTab === tab.id && (
-            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />
-          )}
-        </button>
-      ))}
+    <div className="relative">
+      {/* Decorative line */}
+      <div 
+        className="absolute bottom-0 left-0 w-full h-px"
+        style={{ backgroundColor: isDarkMode ? `${colors.gold}20` : colors.tealPale }}
+      />
+      
+      <div className="flex overflow-x-auto scrollbar-hide pb-2 gap-2">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className={`relative flex-shrink-0 px-5 py-3 rounded-t-2xl transition-all duration-300 group ${
+              activeTab === tab.id 
+                ? 'shadow-lg scale-105' 
+                : 'hover:translate-y-[-2px]'
+            }`}
+            style={{ 
+              backgroundColor: activeTab === tab.id 
+                ? isDarkMode ? `${colors.tealMedium}` : 'white'
+                : 'transparent',
+              borderBottom: activeTab === tab.id 
+                ? `3px solid ${colors.gold}`
+                : '3px solid transparent'
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div 
+                className={`transition-all duration-300 ${
+                  activeTab === tab.id 
+                    ? 'scale-110' 
+                    : 'group-hover:scale-110'
+                }`}
+                style={{ 
+                  color: activeTab === tab.id 
+                    ? colors.gold 
+                    : isDarkMode ? colors.tealLight : colors.tealDark
+                }}
+              >
+                {tab.icon}
+              </div>
+              <div className="text-left">
+                <p 
+                  className="text-xs font-bold uppercase tracking-wider"
+                  style={{ 
+                    color: activeTab === tab.id 
+                      ? colors.tealDark 
+                      : isDarkMode ? colors.tealLight : colors.tealDark
+                  }}
+                >
+                  {tab.label}
+                </p>
+                <p 
+                  className="text-[8px] font-medium mt-0.5"
+                  style={{ 
+                    color: activeTab === tab.id 
+                      ? colors.tealMedium 
+                      : isDarkMode ? `${colors.tealLight}80` : `${colors.tealMedium}80`
+                  }}
+                >
+                  {tab.desc}
+                </p>
+              </div>
+              {activeTab === tab.id && (
+                <Sparkles 
+                  size={12} 
+                  className="absolute top-2 right-2 animate-pulse"
+                  style={{ color: colors.gold }}
+                />
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 };

@@ -6,11 +6,13 @@ import {
   deleteDoc, 
   doc,
   getDocs,
-  writeBatch
+  writeBatch,
+  setDoc,
+  updateDoc  // <-- TAMBAHKAN INI
 } from 'firebase/firestore';
 import { db, appId } from '../utils/firebase';
 
-export const useMasterData = (user) => {
+export const useMasterData = (user, currentUserProfile) => {  // <-- TAMBAHKAN PARAMETER currentUserProfile
   const [skpdList, setSkpdList] = useState([]);
   const [subKegList, setSubKegList] = useState([]);
   const [tahapList, setTahapList] = useState([]);
@@ -143,11 +145,31 @@ export const useMasterData = (user) => {
     });
   };
 
+  const updateSkpd = async (id, newName) => {
+    if (!id || !newName.trim() || !user) return;
+    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'skpds', String(id));
+    await updateDoc(docRef, { 
+      nama: newName.trim(),
+      updatedAt: new Date().toISOString(),
+      updatedBy: currentUserProfile?.nama || 'System'
+    });
+  };
+
   const addSubKeg = async (nama) => {
     if (!nama.trim() || !user) return;
     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'sub_kegiatans'), { 
       nama: nama.trim(), 
       createdAt: new Date().toISOString() 
+    });
+  };
+
+  const updateSubKeg = async (id, newName) => {
+    if (!id || !newName.trim() || !user) return;
+    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sub_kegiatans', String(id));
+    await updateDoc(docRef, { 
+      nama: newName.trim(),
+      updatedAt: new Date().toISOString(),
+      updatedBy: currentUserProfile?.nama || 'System'
     });
   };
 
@@ -228,9 +250,21 @@ export const useMasterData = (user) => {
   const saveBranding = async (data) => {
     if (!user) return;
     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'app_branding');
-    await setDoc(docRef, data);
-    setBranding(data);
-    setBrandingForm(data);
+    
+    // Pastikan nilai default jika tidak diisi
+    const dataToSave = {
+      ...data,
+      deadlineDays: data.deadlineDays || 7,
+      urgentColor: data.urgentColor || '#ef4444',
+      warningColor: data.warningColor || '#d7a217',
+      safeColor: data.safeColor || '#10b981',
+      updatedAt: new Date().toISOString(),
+      updatedBy: currentUserProfile?.nama || 'System'
+    };
+    
+    await setDoc(docRef, dataToSave);
+    setBranding(dataToSave);
+    setBrandingForm(dataToSave);
   };
 
   const importSroBatch = async (data, batchSize = 250, delay = 800) => {
@@ -279,7 +313,9 @@ export const useMasterData = (user) => {
     
     // CRUD Operations
     addSkpd,
+    updateSkpd,  // <-- TAMBAHKAN
     addSubKeg,
+    updateSubKeg,  // <-- TAMBAHKAN
     addTahap,
     addTahun,
     addTapd,

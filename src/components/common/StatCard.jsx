@@ -1,16 +1,30 @@
 import React from 'react';
 
-const StatCard = ({ title, value, icon, color, darkColor, description }) => (
-  <div className={`${color} ${darkColor} p-4 md:p-6 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm flex flex-col gap-2 text-left transition-transform hover:scale-[1.03] active:scale-95 duration-200`}>
-    <div className="flex justify-between items-start">
-      <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100/50 dark:border-slate-700">{icon}</div>
-      <p className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tighter">{String(value)}</p>
+const StatCard = ({ title, value, icon, trend, trendValue }) => {
+  const colors = {
+    teal: '#425c5a',
+    gold: '#d7a217'
+  };
+
+  return (
+    <div className="glass-card p-6 rounded-2xl relative overflow-hidden group hover:scale-105 transition-transform duration-300">
+      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-[#d7a217]/10 to-transparent rounded-bl-full"></div>
+      <div className="flex justify-between items-start">
+        <div>
+          <p className="text-sm font-medium mb-1" style={{ color: colors.teal }}>{title}</p>
+          <h2 className="text-3xl font-bold" style={{ color: colors.teal }}>{value}</h2>
+          {trend && (
+            <p className="text-xs mt-2 flex items-center gap-1" style={{ color: colors.gold }}>
+              {trend} {trendValue}
+            </p>
+          )}
+        </div>
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: colors.gold + '20' }}>
+          <div style={{ color: colors.gold }}>{icon}</div>
+        </div>
+      </div>
     </div>
-    <div>
-      <p className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest leading-none">{String(title)}</p>
-      <p className="text-[9px] text-slate-500 dark:text-slate-500 font-bold italic mt-1.5 opacity-70">{String(description)}</p>
-    </div>
-  </div>
-);
+  );
+};
 
 export default StatCard;

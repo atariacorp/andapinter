@@ -7,7 +7,9 @@ const BankSroModal = ({
   bankSro, 
   onSelect, 
   filterText,
-  onFilterChange 
+  onFilterChange,
+  isDarkMode,
+  colors
 }) => {
   const [localFilter, setLocalFilter] = useState(filterText || '');
   const [currentPage, setCurrentPage] = useState(1);
@@ -39,29 +41,53 @@ const BankSroModal = ({
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4" onClick={onClose}>
+      <div 
+        className="rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+        style={{ 
+          backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(16px)',
+          border: `1px solid ${colors.tealPale}`
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header Modal */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-gradient-to-r from-purple-600 to-purple-700">
+        <div 
+          className="p-6 border-b flex justify-between items-center"
+          style={{ 
+            borderColor: colors.tealPale,
+            background: `linear-gradient(135deg, ${colors.tealDark} 0%, ${colors.tealMedium} 100%)`
+          }}
+        >
           <h3 className="text-white font-black text-sm uppercase tracking-widest flex items-center gap-2">
             <Database size={18} /> BANK DATA KODE REKENING
           </h3>
-          <button onClick={onClose} className="p-2 bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors">
+          <button 
+            onClick={onClose} 
+            className="p-2 rounded-lg transition-colors hover:bg-white/20"
+            style={{ color: 'white' }}
+          >
             <X size={18} />
           </button>
         </div>
         
         {/* Search di Modal */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+        <div className="p-4 border-b" style={{ borderColor: colors.tealPale }}>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: colors.gold }} />
             <input
               type="text"
               value={localFilter}
               onChange={(e) => setLocalFilter(e.target.value)}
               placeholder="Cari kode rekening atau uraian..."
-              className="pl-10 pr-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl text-sm w-full outline-none bg-white dark:bg-slate-800"
+              className="w-full pl-10 pr-4 py-3 rounded-xl text-sm outline-none transition-all focus:ring-2"
+              style={{ 
+                backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
+                border: `1px solid ${colors.tealPale}`,
+                color: colors.tealDark,
+                focusRing: colors.gold
+              }}
               autoFocus
             />
           </div>
@@ -78,18 +104,22 @@ const BankSroModal = ({
                     onSelect(item.kode, item.uraian);
                     onClose();
                   }}
-                  className="p-4 text-left bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group"
+                  className="p-4 text-left rounded-xl transition-all hover:scale-[1.02] group"
+                  style={{ 
+                    backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
+                    border: `1px solid ${colors.tealPale}`,
+                  }}
                 >
-                  <div className="font-mono text-sm font-bold text-purple-700 dark:text-purple-400 mb-1">
+                  <div className="font-mono text-sm font-bold mb-1" style={{ color: colors.gold }}>
                     {item.kode}
                   </div>
-                  <div className="text-xs text-slate-600 dark:text-slate-400">
+                  <div className="text-xs" style={{ color: colors.tealDark }}>
                     {item.uraian}
                   </div>
                 </button>
               ))
             ) : (
-              <div className="text-center py-10 text-slate-400 italic">
+              <div className="text-center py-10 italic" style={{ color: colors.tealMedium }}>
                 {localFilter ? 'Tidak ada data yang cocok' : 'Tidak ada data SRO'}
               </div>
             )}
@@ -98,25 +128,35 @@ const BankSroModal = ({
         
         {/* Footer Modal dengan Pagination */}
         {filteredData.length > 0 && (
-          <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
-            <span className="text-xs text-slate-500">
+          <div className="p-4 border-t flex justify-between items-center" style={{ borderColor: colors.tealPale }}>
+            <span className="text-xs" style={{ color: colors.tealMedium }}>
               Menampilkan {start + 1}-{Math.min(start + itemsPerPage, filteredData.length)} dari {filteredData.length} data
             </span>
             <div className="flex gap-2">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 bg-white dark:bg-slate-700 border rounded-lg disabled:opacity-30 text-xs"
+                className="px-3 py-1 rounded-lg text-xs transition-all disabled:opacity-30"
+                style={{ 
+                  backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
+                  border: `1px solid ${colors.tealPale}`,
+                  color: colors.tealDark
+                }}
               >
                 Prev
               </button>
-              <span className="px-3 py-1 text-xs">
+              <span className="px-3 py-1 text-xs" style={{ color: colors.tealDark }}>
                 {currentPage} / {totalPages}
               </span>
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 bg-white dark:bg-slate-700 border rounded-lg disabled:opacity-30 text-xs"
+                className="px-3 py-1 rounded-lg text-xs transition-all disabled:opacity-30"
+                style={{ 
+                  backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
+                  border: `1px solid ${colors.tealPale}`,
+                  color: colors.tealDark
+                }}
               >
                 Next
               </button>

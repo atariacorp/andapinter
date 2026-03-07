@@ -7,11 +7,20 @@ const Pagination = ({
   onPageChange,
   itemsPerPage,
   onItemsPerPageChange,
-  totalItems 
+  totalItems,
+  isDarkMode
 }) => {
+  
+  const colors = {
+    tealDark: '#425c5a',
+    tealMedium: '#3c5654',
+    tealPale: '#cadfdf',
+    gold: '#d7a217'
+  };
+
   return (
-    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs transition-colors">
-      <div className="flex items-center gap-2 font-bold text-slate-500 dark:text-slate-400">
+    <div className="p-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
+      <div className="flex items-center gap-2 font-medium" style={{ color: colors.tealMedium }}>
         Baris per halaman: 
         <select 
           value={itemsPerPage} 
@@ -19,13 +28,17 @@ const Pagination = ({
             onItemsPerPageChange(parseInt(e.target.value));
             onPageChange(1);
           }} 
-          className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded p-1 outline-none text-blue-600 dark:text-blue-400 font-black tracking-tighter"
+          className="bg-transparent border rounded p-1 outline-none cursor-pointer"
+          style={{ 
+            borderColor: colors.tealPale,
+            color: colors.gold
+          }}
         >
           {[10, 30, 50, 100].map(v => (
             <option key={v} value={v}>{String(v)}</option>
           ))}
         </select>
-        <span className="ml-2">
+        <span className="ml-2" style={{ color: colors.tealMedium }}>
           Total: {totalItems} data
         </span>
       </div>
@@ -34,21 +47,29 @@ const Pagination = ({
         <button 
           disabled={currentPage === 1} 
           onClick={() => onPageChange(currentPage - 1)} 
-          className="p-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded shadow-sm disabled:opacity-30 text-slate-600 dark:text-slate-300"
+          className="p-2 border rounded transition-all hover:scale-105 disabled:opacity-30"
+          style={{ 
+            borderColor: colors.tealPale,
+            color: colors.tealDark
+          }}
         >
-          <ChevronLeft size={14}/>
+          <ChevronLeft size={14} />
         </button>
         
-        <span className="font-black text-slate-600 dark:text-slate-300 tracking-tighter">
+        <span className="font-medium px-3 py-2" style={{ color: colors.tealDark }}>
           Halaman {currentPage} dari {totalPages || 1}
         </span>
         
         <button 
           disabled={currentPage === totalPages || totalPages === 0} 
           onClick={() => onPageChange(currentPage + 1)} 
-          className="p-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded shadow-sm disabled:opacity-30 text-slate-600 dark:text-slate-300"
+          className="p-2 border rounded transition-all hover:scale-105 disabled:opacity-30"
+          style={{ 
+            borderColor: colors.tealPale,
+            color: colors.tealDark
+          }}
         >
-          <ChevronRight size={14}/>
+          <ChevronRight size={14} />
         </button>
       </div>
     </div>

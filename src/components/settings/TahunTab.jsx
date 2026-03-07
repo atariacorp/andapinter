@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CalendarDays, Plus, AlertCircle } from 'lucide-react';
+import { CalendarDays, Plus, AlertCircle, Zap } from 'lucide-react';
 import MasterDataTable from '../common/MasterDataTable';
 
 const TahunTab = ({ 
@@ -7,7 +7,9 @@ const TahunTab = ({
   onAdd, 
   onDelete, 
   onGenerateDefault,
-  isProcessing 
+  isProcessing,
+  isDarkMode,
+  colors 
 }) => {
   const [newTahun, setNewTahun] = useState('');
 
@@ -33,21 +35,37 @@ const TahunTab = ({
     setNewTahun('');
   };
 
+  // Glass card style
+  const glassCard = `backdrop-blur-md rounded-2xl border transition-all hover:shadow-xl p-6 ${
+    isDarkMode 
+      ? 'bg-[#3c5654]/30 border-[#d7a217]/20' 
+      : 'bg-white/70 border-[#cadfdf]'
+  }`;
+
+  const glassInput = `w-full p-3 rounded-xl text-sm outline-none transition-all focus:ring-2 ${
+    isDarkMode 
+      ? 'bg-[#3c5654]/30 border-[#d7a217]/30 text-[#e2eceb] focus:ring-[#d7a217]/50' 
+      : 'bg-white/70 border-[#cadfdf] text-[#425c5a] focus:ring-[#d7a217]/50'
+  }`;
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      {/* Left Column - Form */}
-      <div className="lg:col-span-5 space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      {/* Left Column - Forms */}
+      <div className="lg:col-span-5 space-y-5">
         
-        {/* Form Tambah */}
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
-          <h2 className="text-sm font-black text-slate-700 dark:text-slate-200 uppercase flex items-center gap-2">
-            <CalendarDays size={16} className="text-blue-500"/> Input Tahun Anggaran Baru
-          </h2>
+        {/* Form Tambah Manual */}
+        <div className={glassCard}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2.5 rounded-lg" style={{ backgroundColor: `${colors.gold}20` }}>
+              <CalendarDays size={18} style={{ color: colors.gold }} />
+            </div>
+            <h3 className="text-sm font-bold" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
+              Tambah Tahun Anggaran
+            </h3>
+          </div>
           
-          <div>
-            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase mb-1 block">
-              Tahun (4 digit)
-            </label>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <input 
               required 
               type="number" 
@@ -56,44 +74,70 @@ const TahunTab = ({
               value={newTahun} 
               onChange={e => setNewTahun(e.target.value)} 
               placeholder="Contoh: 2024" 
-              className="w-full p-3 border rounded-xl text-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none"
+              className={glassInput}
+              style={{ borderWidth: '1px', borderStyle: 'solid' }}
             />
-          </div>
-          
-          <button 
-            type="submit" 
-            disabled={isProcessing}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold uppercase text-[10px] shadow-lg transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Plus size={16} />
-            {isProcessing ? 'MENAMBAH...' : 'TAMBAH TAHUN ANGGARAN'}
-          </button>
-        </form>
-        
-        {/* Info Section */}
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl text-blue-700 dark:text-blue-300 text-xs italic">
-          <CalendarDays size={14} className="inline mr-1" />
-          Tahun anggaran yang ditambahkan akan muncul di dropdown filter pada halaman Dashboard dan Daftar Berkas.
+            
+            <button 
+              type="submit" 
+              disabled={isProcessing}
+              className="w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ 
+                background: `linear-gradient(135deg, ${colors.gold} 0%, ${colors.tealDark} 100%)`,
+                color: 'white'
+              }}
+            >
+              <Plus size={14} />
+              {isProcessing ? 'MENAMBAH...' : 'TAMBAH TAHUN'}
+            </button>
+          </form>
         </div>
-
+        
         {/* Generate Default */}
         {tahunList.length === 0 && (
-          <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-800/50 shadow-sm">
-            <p className="text-xs text-amber-700 dark:text-amber-400 font-bold mb-3">
-              Database tahun masih kosong! Klik tombol di bawah untuk membuat tahun default (2024-2026).
-            </p>
-            <button 
-              onClick={onGenerateDefault} 
-              disabled={isProcessing} 
-              className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-md transition-all active:scale-95 disabled:opacity-50 flex justify-center items-center gap-2"
-            >
-              <CalendarDays size={14}/>
-              {isProcessing ? 'MEMPROSES...' : 'GENERATE TAHUN DEFAULT'}
-            </button>
+          <div className={glassCard}>
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg" style={{ backgroundColor: `${colors.gold}20` }}>
+                <AlertCircle size={18} style={{ color: colors.gold }} />
+              </div>
+              <div>
+                <p className="text-sm font-bold mb-2" style={{ color: colors.gold }}>
+                  Database Tahun Kosong
+                </p>
+                <p className="text-xs mb-4" style={{ color: isDarkMode ? colors.tealLight : colors.tealMedium }}>
+                  Klik tombol di bawah untuk membuat tahun default (2024-2026).
+                </p>
+                <button 
+                  onClick={onGenerateDefault} 
+                  disabled={isProcessing}
+                  className="w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${colors.gold} 0%, ${colors.tealDark} 100%)`,
+                    color: 'white'
+                  }}
+                >
+                  <Zap size={14} />
+                  GENERATE TAHUN DEFAULT
+                </button>
+              </div>
+            </div>
           </div>
         )}
+        
+        {/* Info */}
+        <div 
+          className="p-4 rounded-xl text-xs italic"
+          style={{ 
+            backgroundColor: `${colors.gold}10`,
+            border: `1px solid ${colors.gold}30`,
+            color: isDarkMode ? colors.tealLight : colors.tealMedium
+          }}
+        >
+          <CalendarDays size={14} className="inline mr-1" style={{ color: colors.gold }} />
+          Tahun anggaran akan muncul di dropdown filter pada halaman Dashboard dan Daftar Berkas.
+        </div>
       </div>
-
+      
       {/* Right Column - Data Table */}
       <div className="lg:col-span-7">
         <MasterDataTable
@@ -102,15 +146,17 @@ const TahunTab = ({
             { 
               field: 'tahun', 
               render: (item) => (
-                <span className="flex items-center gap-2">
-                  <CalendarDays size={16} className="text-blue-500" />
-                  {item.tahun || item.nama}
-                </span>
+                <div className="flex items-center gap-2">
+                  <CalendarDays size={14} style={{ color: colors.gold }} />
+                  <span className="font-bold">{item.tahun || item.nama}</span>
+                </div>
               )
             }
           ]}
           onDelete={onDelete}
           emptyMessage="Belum ada data Tahun Anggaran"
+          isDarkMode={isDarkMode}
+          colors={colors}
         />
       </div>
     </div>

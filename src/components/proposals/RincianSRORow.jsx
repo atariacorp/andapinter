@@ -7,14 +7,22 @@ const RincianSRORow = ({
   onItemChange, 
   onRemove, 
   onOpenBankSro,
-  isLastItem 
+  isLastItem,
+  isDarkMode,
+  colors
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 bg-slate-50 dark:bg-slate-900/50 p-4 md:p-2 rounded-xl border border-slate-100 dark:border-slate-700 items-center">
+    <div 
+      className="grid grid-cols-1 md:grid-cols-12 gap-2 p-4 md:p-2 rounded-xl border items-center transition-all hover:shadow-md"
+      style={{ 
+        backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.2)' : 'rgba(255, 255, 255, 0.5)',
+        borderColor: colors.tealPale
+      }}
+    >
       
       {/* Kode Rekening */}
       <div className="md:col-span-3">
-        <label className="md:hidden text-[10px] font-bold text-slate-400 mb-1 block">
+        <label className="md:hidden text-[10px] font-bold mb-1 block" style={{ color: colors.tealMedium }}>
           Kode Rekening
         </label>
         <input 
@@ -22,13 +30,19 @@ const RincianSRORow = ({
           placeholder="Contoh: 5.1.02.xx" 
           value={item.kodeRekening} 
           onChange={(e) => onItemChange(index, 'kodeRekening', e.target.value)} 
-          className="w-full p-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:ring-1 focus:ring-emerald-500" 
+          className="w-full p-2 rounded-lg text-xs outline-none transition-all focus:ring-2 font-mono"
+          style={{ 
+            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'white',
+            border: `1px solid ${colors.tealPale}`,
+            color: colors.tealDark,
+            focusRing: colors.gold
+          }}
         />
       </div>
       
       {/* Uraian SRO */}
       <div className="md:col-span-3">
-        <label className="md:hidden text-[10px] font-bold text-slate-400 mb-1 block">
+        <label className="md:hidden text-[10px] font-bold mb-1 block" style={{ color: colors.tealMedium }}>
           Uraian SRO
         </label>
         <input 
@@ -36,13 +50,19 @@ const RincianSRORow = ({
           placeholder="Nama Sub Rincian Objek..." 
           value={item.uraian} 
           onChange={(e) => onItemChange(index, 'uraian', e.target.value)} 
-          className="w-full p-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:ring-1 focus:ring-emerald-500" 
+          className="w-full p-2 rounded-lg text-xs outline-none transition-all focus:ring-2"
+          style={{ 
+            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'white',
+            border: `1px solid ${colors.tealPale}`,
+            color: colors.tealDark,
+            focusRing: colors.gold
+          }}
         />
       </div>
       
       {/* Pagu Semula */}
       <div className="md:col-span-2">
-        <label className="md:hidden text-[10px] font-bold text-slate-400 mb-1 block">
+        <label className="md:hidden text-[10px] font-bold mb-1 block" style={{ color: colors.tealMedium }}>
           Pagu Semula
         </label>
         <input 
@@ -51,13 +71,19 @@ const RincianSRORow = ({
           placeholder="0" 
           value={item.paguSebelum} 
           onChange={(e) => onItemChange(index, 'paguSebelum', parseFloat(e.target.value || 0))} 
-          className="w-full p-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none text-right focus:ring-1 focus:ring-emerald-500" 
+          className="w-full p-2 rounded-lg text-xs outline-none transition-all focus:ring-2 text-right"
+          style={{ 
+            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'white',
+            border: `1px solid ${colors.tealPale}`,
+            color: colors.tealDark,
+            focusRing: colors.gold
+          }}
         />
       </div>
       
       {/* Pagu Sesudah */}
       <div className="md:col-span-2">
-        <label className="md:hidden text-[10px] font-bold text-slate-400 mb-1 block">
+        <label className="md:hidden text-[10px] font-bold mb-1 block" style={{ color: colors.tealMedium }}>
           Pagu Sesudah
         </label>
         <input 
@@ -66,7 +92,13 @@ const RincianSRORow = ({
           placeholder="0" 
           value={item.paguSesudah} 
           onChange={(e) => onItemChange(index, 'paguSesudah', parseFloat(e.target.value || 0))} 
-          className="w-full p-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-800 font-bold text-blue-600 dark:text-blue-400 outline-none text-right focus:ring-1 focus:ring-emerald-500" 
+          className="w-full p-2 rounded-lg text-xs outline-none transition-all focus:ring-2 text-right font-bold"
+          style={{ 
+            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'white',
+            border: `1px solid ${colors.gold}`,
+            color: colors.gold,
+            focusRing: colors.gold
+          }}
         />
       </div>
       
@@ -78,7 +110,11 @@ const RincianSRORow = ({
             sessionStorage.setItem('editingSroIndex', index);
             onOpenBankSro();
           }} 
-          className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50 rounded-lg transition-colors" 
+          className="p-2 rounded-lg transition-all hover:scale-110"
+          style={{ 
+            backgroundColor: `${colors.gold}20`,
+            color: colors.gold
+          }}
           title="Pilih dari Bank Data"
         >
           <Database size={16} />
@@ -88,7 +124,11 @@ const RincianSRORow = ({
           type="button" 
           onClick={() => onRemove(item.id)} 
           disabled={isLastItem} 
-          className="p-2 text-slate-400 hover:text-rose-600 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg disabled:opacity-30 transition-colors" 
+          className="p-2 rounded-lg transition-all hover:scale-110 disabled:opacity-30"
+          style={{ 
+            backgroundColor: isLastItem ? 'transparent' : `${colors.tealDark}20`,
+            color: colors.tealDark
+          }}
           title="Hapus Rincian"
         >
           <Trash2 size={16} />

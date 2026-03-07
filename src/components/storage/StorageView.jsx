@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Database, HardDrive, Download, Upload, RefreshCw, 
   Trash2, AlertTriangle, CheckCircle, X, FileText,
-  Calendar, FolderOpen, PieChart, BarChart2
+  Calendar, FolderOpen, PieChart, BarChart2, Server,
+  Shield, Clock, Archive
 } from 'lucide-react';
 import { formatFileSize, IS_CANVAS } from '../../utils';
 
@@ -16,7 +17,8 @@ const StorageView = ({
   checkStorageUsage,
   backupAllFiles,
   restoreFromBackup,
-  cleanupOrphanFiles
+  cleanupOrphanFiles,
+  isDarkMode
 }) => {
   const [loading, setLoading] = useState(false);
   const [storageStats, setStorageStats] = useState({
@@ -34,6 +36,15 @@ const StorageView = ({
   const [backupLoading, setBackupLoading] = useState(false);
   const [selectedYear, setSelectedYear] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState('all');
+
+  // Palet warna teal & gold
+  const colors = {
+    tealDark: '#425c5a',
+    tealMedium: '#3c5654',
+    tealLight: '#e2eceb',
+    tealPale: '#cadfdf',
+    gold: '#d7a217'
+  };
 
   // Load data saat komponen mount
   useEffect(() => {
@@ -161,17 +172,52 @@ const StorageView = ({
     return total;
   };
 
+  // Glass card style
+  const glassCard = `backdrop-blur-md rounded-2xl border transition-all hover:shadow-xl ${
+    isDarkMode 
+      ? 'bg-[#3c5654]/30 border-[#d7a217]/20' 
+      : 'bg-white/70 border-[#cadfdf]'
+  }`;
+
   return (
-    <div className="space-y-6 animate-in fade-in">
+    <div className="space-y-6 animate-in fade-in relative">
+      
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div 
+          className="absolute w-96 h-96 rounded-full blur-3xl"
+          style={{
+            backgroundColor: colors.gold,
+            opacity: 0.03,
+            top: '-10%',
+            right: '-5%'
+          }}
+        />
+        <div 
+          className="absolute w-[500px] h-[500px] rounded-full blur-3xl"
+          style={{
+            backgroundColor: colors.tealDark,
+            opacity: 0.03,
+            bottom: '-10%',
+            left: '-5%'
+          }}
+        />
+      </div>
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
-            <Database size={24} className="text-blue-500" />
+          <h1 
+            className="text-2xl font-bold tracking-tight flex items-center gap-2"
+            style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}
+          >
+            <Server size={24} style={{ color: colors.gold }} />
             Manajemen Storage
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
+          <p 
+            className="text-sm mt-1"
+            style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}
+          >
             Monitor dan backup file penyimpanan Firebase Storage
           </p>
         </div>
@@ -179,20 +225,32 @@ const StorageView = ({
         <button
           onClick={handleRefresh}
           disabled={loading || IS_CANVAS}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs uppercase shadow-lg flex items-center gap-2 disabled:opacity-50"
+          className="px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-50"
+          style={{ 
+            background: `linear-gradient(135deg, ${colors.gold} 0%, ${colors.tealDark} 100%)`,
+            color: 'white'
+          }}
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          {loading ? 'MEMUAT...' : 'REFRESH'}
+          {loading ? 'MEMUAT...' : 'REFRESH DATA'}
         </button>
       </div>
 
       {/* Canvas Mode Warning */}
       {IS_CANVAS && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 rounded-xl flex items-start gap-3">
-          <AlertTriangle size={20} className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+        <div 
+          className={`${glassCard} p-5 rounded-xl flex items-start gap-4 relative z-10`}
+          style={{ backgroundColor: `${colors.gold}10` }}
+        >
+          <div 
+            className="p-3 rounded-xl shrink-0"
+            style={{ backgroundColor: `${colors.gold}20` }}
+          >
+            <AlertTriangle size={20} style={{ color: colors.gold }} />
+          </div>
           <div>
-            <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300">Mode Canvas Terdeteksi</h4>
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 leading-relaxed">
+            <h4 className="text-sm font-bold" style={{ color: colors.gold }}>Mode Canvas Terdeteksi</h4>
+            <p className="text-xs mt-1 leading-relaxed" style={{ color: colors.tealMedium }}>
               Fitur storage tidak tersedia di lingkungan preview Canvas. Data yang ditampilkan adalah simulasi.
             </p>
           </div>
@@ -200,187 +258,277 @@ const StorageView = ({
       )}
       
       {/* Statistik Storage */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
         
         {/* Card Penggunaan */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-              <HardDrive size={24} className="text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase">Total Storage</p>
-              <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{storageStats.used}</p>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between text-[10px] font-bold">
-              <span className="text-slate-500">Terpakai</span>
-              <span className="text-blue-600">{storageStats.percentage.toFixed(1)}%</span>
-            </div>
-            
-            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
+        <div className={glassCard}>
+          <div className="p-6">
+            <div className="flex items-center gap-4 mb-4">
               <div 
-                className={`h-2.5 rounded-full ${
-                  storageStats.percentage > 90 ? 'bg-rose-500' : 
-                  storageStats.percentage > 70 ? 'bg-amber-500' : 'bg-blue-500'
-                }`}
-                style={{ width: `${storageStats.percentage}%` }}
-              ></div>
+                className="p-4 rounded-xl"
+                style={{ backgroundColor: `${colors.gold}20` }}
+              >
+                <HardDrive size={28} style={{ color: colors.gold }} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.tealMedium }}>
+                  Total Storage
+                </p>
+                <p 
+                  className="text-3xl font-bold"
+                  style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}
+                >
+                  {storageStats.used}
+                </p>
+              </div>
             </div>
             
-            <p className="text-[9px] text-slate-400 mt-2">
-              Kuota: {storageStats.total} • {storageStats.files || 0} file
-            </p>
+            <div className="space-y-3">
+              <div className="flex justify-between text-xs font-medium">
+                <span style={{ color: colors.tealMedium }}>Terpakai</span>
+                <span style={{ color: colors.gold }}>{storageStats.percentage.toFixed(1)}%</span>
+              </div>
+              
+              <div 
+                className="w-full h-3 rounded-full overflow-hidden"
+                style={{ backgroundColor: isDarkMode ? colors.tealMedium : colors.tealPale }}
+              >
+                <div 
+                  className="h-3 rounded-full transition-all duration-500"
+                  style={{ 
+                    width: `${storageStats.percentage}%`,
+                    background: `linear-gradient(90deg, ${colors.gold} 0%, ${colors.tealDark} 100%)`
+                  }}
+                />
+              </div>
+              
+              <div className="flex justify-between text-[10px]">
+                <span style={{ color: colors.tealMedium }}>
+                  <Archive size={12} className="inline mr-1" />
+                  {storageStats.files || 0} file
+                </span>
+                <span style={{ color: colors.tealMedium }}>
+                  <Shield size={12} className="inline mr-1" />
+                  Kuota: {storageStats.total}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
         
         {/* Card Aksi Backup */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm md:col-span-2">
-          <h3 className="text-xs font-black text-slate-700 dark:text-slate-200 mb-4 uppercase flex items-center gap-2">
-            <Download size={16} /> Backup & Restore
-          </h3>
-          
-          <div className="space-y-4">
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              Download daftar semua file untuk backup ke server lokal. File akan di-download dalam format JSON.
-            </p>
+        <div className={`${glassCard} md:col-span-2`}>
+          <div className="p-6">
+            <h3 
+              className="text-sm font-bold mb-4 uppercase tracking-wider flex items-center gap-2"
+              style={{ color: colors.gold }}
+            >
+              <Download size={18} /> Backup & Restore
+            </h3>
             
-            <div className="flex gap-3 flex-wrap">
-              {/* Tombol Backup */}
-              <button
-                onClick={handleBackup}
-                disabled={backupLoading || IS_CANVAS}
-                className="flex-1 min-w-[150px] px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs uppercase shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {backupLoading ? (
-                  <>
-                    <RefreshCw size={14} className="animate-spin" />
-                    MEMBACKUP...
-                  </>
-                ) : (
-                  <>
-                    <Download size={14} />
-                    BACKUP
-                  </>
-                )}
-              </button>
+            <div className="space-y-5">
+              <p className="text-xs" style={{ color: colors.tealMedium }}>
+                Download daftar semua file untuk backup ke server lokal. File akan di-download dalam format JSON.
+              </p>
               
-              {/* Tombol Restore */}
-              <div className="relative flex-1 min-w-[150px]">
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleRestoreFileSelect}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  disabled={restoreLoading || IS_CANVAS}
-                />
-                <div className={`w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs uppercase shadow-lg flex items-center justify-center gap-2 cursor-pointer ${
-                  (restoreLoading || IS_CANVAS) ? 'opacity-50 cursor-not-allowed' : ''
-                }`}>
-                  <Upload size={14} />
-                  RESTORE
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Tombol Backup */}
+                <button
+                  onClick={handleBackup}
+                  disabled={backupLoading || IS_CANVAS}
+                  className="px-4 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg transition-all hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-50"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${colors.tealDark} 0%, ${colors.tealMedium} 100%)`,
+                    color: 'white'
+                  }}
+                >
+                  {backupLoading ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" />
+                      MEMBACKUP...
+                    </>
+                  ) : (
+                    <>
+                      <Download size={14} />
+                      BACKUP
+                    </>
+                  )}
+                </button>
+                
+                {/* Tombol Restore */}
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleRestoreFileSelect}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    disabled={restoreLoading || IS_CANVAS}
+                  />
+                  <div 
+                    className={`w-full px-4 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg transition-all hover:scale-105 flex items-center justify-center gap-2 cursor-pointer ${
+                      (restoreLoading || IS_CANVAS) ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    style={{ 
+                      backgroundColor: colors.gold,
+                      color: 'white'
+                    }}
+                  >
+                    <Upload size={14} />
+                    RESTORE
+                  </div>
                 </div>
+                
+                {/* Tombol Cleanup */}
+                <button
+                  onClick={handleCleanup}
+                  disabled={IS_CANVAS}
+                  className="px-4 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg transition-all hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-50"
+                  style={{ 
+                    backgroundColor: isDarkMode ? colors.tealMedium : colors.tealPale,
+                    color: isDarkMode ? colors.tealLight : colors.tealDark
+                  }}
+                >
+                  <Trash2 size={14} />
+                  CLEANUP
+                </button>
               </div>
-              
-              {/* Tombol Cleanup */}
-              <button
-                onClick={handleCleanup}
-                disabled={IS_CANVAS}
-                className="px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-black text-xs uppercase shadow-lg disabled:opacity-50"
-              >
-                Bersihkan
-              </button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Filter Section */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-        <h3 className="text-xs font-black text-slate-700 dark:text-slate-200 mb-4 uppercase flex items-center gap-2">
-          <BarChart2 size={16} /> Filter Data
-        </h3>
-        
-        <div className="flex flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <Calendar size={16} className="text-slate-400" />
-            <select
-              value={selectedYear}
-              onChange={(e) => {
-                setSelectedYear(e.target.value);
-                setSelectedMonth('all');
-              }}
-              className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800"
-            >
-              <option value="all">Semua Tahun</option>
-              {getYears().map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          </div>
+      <div className={glassCard}>
+        <div className="p-6">
+          <h3 
+            className="text-sm font-bold mb-4 uppercase tracking-wider flex items-center gap-2"
+            style={{ color: colors.gold }}
+          >
+            <BarChart2 size={18} /> Filter Data
+          </h3>
           
-          {selectedYear !== 'all' && (
-            <div className="flex items-center gap-2">
-              <FolderOpen size={16} className="text-slate-400" />
+          <div className="flex flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <Calendar size={16} style={{ color: colors.gold }} />
               <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800"
+                value={selectedYear}
+                onChange={(e) => {
+                  setSelectedYear(e.target.value);
+                  setSelectedMonth('all');
+                }}
+                className="px-3 py-2 rounded-lg text-sm outline-none transition-all focus:ring-2"
+                style={{ 
+                  backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'white',
+                  border: `1px solid ${colors.tealPale}`,
+                  color: isDarkMode ? colors.tealLight : colors.tealDark,
+                  focusRing: colors.gold
+                }}
               >
-                <option value="all">Semua Bulan</option>
-                {getMonths().map(month => {
-                  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
-                  return (
-                    <option key={month} value={month}>
-                      {monthNames[parseInt(month) - 1] || month}
-                    </option>
-                  );
-                })}
+                <option value="all">Semua Tahun</option>
+                {getYears().map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
               </select>
             </div>
-          )}
-          
-          <div className="ml-auto">
-            <span className="text-sm font-bold text-blue-600">
-              Total: {formatFileSize(getTotalSize())}
-            </span>
+            
+            {selectedYear !== 'all' && (
+              <div className="flex items-center gap-3">
+                <FolderOpen size={16} style={{ color: colors.gold }} />
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="px-3 py-2 rounded-lg text-sm outline-none transition-all focus:ring-2"
+                  style={{ 
+                    backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'white',
+                    border: `1px solid ${colors.tealPale}`,
+                    color: isDarkMode ? colors.tealLight : colors.tealDark,
+                    focusRing: colors.gold
+                  }}
+                >
+                  <option value="all">Semua Bulan</option>
+                  {getMonths().map(month => {
+                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+                    return (
+                      <option key={month} value={month}>
+                        {monthNames[parseInt(month) - 1] || month}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
+            
+            <div className="ml-auto">
+              <span 
+                className="text-sm font-bold px-4 py-2 rounded-lg"
+                style={{ 
+                  backgroundColor: `${colors.gold}20`,
+                  color: colors.gold
+                }}
+              >
+                Total: {formatFileSize(getTotalSize())}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Detail per Tahun/Bulan */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-        <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
-          <h3 className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">
+      <div className={glassCard}>
+        <div 
+          className="p-4 border-b"
+          style={{ borderColor: colors.tealPale }}
+        >
+          <h3 
+            className="text-sm font-bold uppercase tracking-wider"
+            style={{ color: colors.tealDark }}
+          >
             Detail Penggunaan Storage
           </h3>
         </div>
         
-        <div className="p-4">
+        <div className="p-6">
           {loading ? (
-            <div className="text-center py-8">
-              <RefreshCw size={32} className="animate-spin mx-auto mb-3 text-blue-500" />
-              <p className="text-slate-400 italic">Memuat data storage...</p>
+            <div className="text-center py-12">
+              <RefreshCw size={40} className="animate-spin mx-auto mb-4" style={{ color: colors.gold }} />
+              <p className="text-sm italic" style={{ color: colors.tealMedium }}>Memuat data storage...</p>
             </div>
           ) : Object.keys(storageStats.folders).length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {Object.entries(getFilteredFolders())
                 .sort((a, b) => b[0].localeCompare(a[0]))
                 .map(([year, months]) => {
                   const yearTotal = Object.values(months).reduce((a, b) => a + b, 0);
                   
                   return (
-                    <div key={year} className="border border-slate-100 dark:border-slate-700 rounded-xl p-4">
-                      <div className="flex justify-between items-center mb-3">
-                        <h4 className="text-sm font-black text-slate-800 dark:text-slate-200">{year}</h4>
-                        <span className="text-xs font-bold text-blue-600">
+                    <div 
+                      key={year} 
+                      className="rounded-xl p-5 transition-all hover:shadow-md"
+                      style={{ 
+                        backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.2)' : 'rgba(202, 223, 223, 0.2)',
+                        border: `1px solid ${colors.tealPale}`
+                      }}
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 
+                          className="text-base font-bold flex items-center gap-2"
+                          style={{ color: colors.gold }}
+                        >
+                          <Calendar size={16} />
+                          {year}
+                        </h4>
+                        <span 
+                          className="text-sm font-bold px-3 py-1 rounded-full"
+                          style={{ 
+                            backgroundColor: `${colors.gold}20`,
+                            color: colors.gold
+                          }}
+                        >
                           {formatFileSize(yearTotal)}
                         </span>
                       </div>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                         {Object.entries(months)
                           .sort((a, b) => b[0].localeCompare(a[0]))
                           .map(([month, size]) => {
@@ -388,9 +536,18 @@ const StorageView = ({
                             const monthName = monthNames[parseInt(month) - 1] || month;
                             
                             return (
-                              <div key={`${year}-${month}`} className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg">
-                                <p className="text-[9px] font-bold text-slate-500">{monthName}</p>
-                                <p className="text-[10px] font-black text-slate-700 dark:text-slate-300">
+                              <div 
+                                key={`${year}-${month}`} 
+                                className="p-3 rounded-lg text-center transition-all hover:scale-105"
+                                style={{ 
+                                  backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'white',
+                                  border: `1px solid ${colors.tealPale}`
+                                }}
+                              >
+                                <p className="text-[10px] font-bold uppercase mb-1" style={{ color: colors.gold }}>
+                                  {monthName}
+                                </p>
+                                <p className="text-xs font-bold" style={{ color: colors.tealDark }}>
                                   {formatFileSize(size)}
                                 </p>
                               </div>
@@ -402,58 +559,106 @@ const StorageView = ({
                 })}
             </div>
           ) : (
-            <p className="text-center text-slate-400 italic py-8">
-              {IS_CANVAS 
-                ? 'Mode Canvas: Data storage tidak tersedia' 
-                : 'Belum ada data storage. Klik Refresh untuk memuat.'}
-            </p>
+            <div className="text-center py-12">
+              <Database size={48} className="mx-auto mb-4 opacity-30" style={{ color: colors.tealMedium }} />
+              <p className="text-sm italic" style={{ color: colors.tealMedium }}>
+                {IS_CANVAS 
+                  ? 'Mode Canvas: Data storage tidak tersedia' 
+                  : 'Belum ada data storage. Klik Refresh untuk memuat.'}
+              </p>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Modal Restore */}
+      {/* Modal Restore dengan Glassmorphism */}
       {showRestoreModal && restoreFile && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4" onClick={() => setShowRestoreModal(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4"
+          onClick={() => setShowRestoreModal(false)}
+        >
+          <div 
+            className="max-w-2xl w-full rounded-2xl overflow-hidden flex flex-col"
+            style={{ 
+              backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(16px)',
+              border: `1px solid ${colors.tealPale}`
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             
             {/* Header */}
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-blue-600 to-purple-600">
-              <h3 className="text-white font-black text-sm uppercase tracking-widest flex items-center gap-2">
+            <div 
+              className="p-6 border-b flex justify-between items-center"
+              style={{ 
+                borderColor: colors.tealPale,
+                background: `linear-gradient(135deg, ${colors.tealDark} 0%, ${colors.tealMedium} 100%)`
+              }}
+            >
+              <h3 className="text-white font-bold text-sm uppercase tracking-widest flex items-center gap-2">
                 <Upload size={18} /> PREVIEW RESTORE
               </h3>
+              <button 
+                onClick={() => setShowRestoreModal(false)}
+                className="p-2 rounded-lg hover:bg-white/20 transition-colors"
+              >
+                <X size={18} className="text-white" />
+              </button>
             </div>
             
             {/* Body */}
             <div className="flex-grow overflow-y-auto p-6">
               {restoreLoading ? (
                 <div className="text-center py-8">
-                  <RefreshCw size={32} className="animate-spin mx-auto mb-3 text-blue-500" />
-                  <p className="text-slate-600 dark:text-slate-400">Memproses restore...</p>
-                  <div className="mt-4 w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
+                  <RefreshCw size={40} className="animate-spin mx-auto mb-4" style={{ color: colors.gold }} />
+                  <p className="text-sm mb-4" style={{ color: colors.tealDark }}>Memproses restore...</p>
+                  <div 
+                    className="w-full h-3 rounded-full overflow-hidden"
+                    style={{ backgroundColor: colors.tealPale }}
+                  >
                     <div 
-                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
-                      style={{ width: `${restoreProgress}%` }}
-                    ></div>
+                      className="h-3 rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${restoreProgress}%`,
+                        background: `linear-gradient(90deg, ${colors.gold} 0%, ${colors.tealDark} 100%)`
+                      }}
+                    />
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">{Math.round(restoreProgress)}%</p>
+                  <p className="text-xs mt-2 font-bold" style={{ color: colors.gold }}>
+                    {Math.round(restoreProgress)}%
+                  </p>
                 </div>
               ) : (
                 <>
-                  <p className="text-sm text-slate-700 dark:text-slate-300 mb-4">
-                    File backup: <span className="font-bold">{restoreFile.name}</span>
+                  <p className="text-sm mb-4" style={{ color: colors.tealDark }}>
+                    File backup: <span className="font-bold" style={{ color: colors.gold }}>{restoreFile.name}</span>
                   </p>
                   
-                  <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl mb-4">
-                    <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Informasi Backup</p>
-                    <div className="space-y-1 text-xs">
-                      <p><span className="font-medium">Nama File:</span> {restoreFile.name}</p>
-                      <p><span className="font-medium">Ukuran:</span> {(restoreFile.size / 1024).toFixed(2)} KB</p>
+                  <div 
+                    className="p-4 rounded-xl mb-4"
+                    style={{ 
+                      backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(202, 223, 223, 0.3)',
+                      border: `1px solid ${colors.tealPale}`
+                    }}
+                  >
+                    <p className="text-[10px] font-bold uppercase mb-2" style={{ color: colors.gold }}>
+                      Informasi Backup
+                    </p>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-medium" style={{ color: colors.tealMedium }}>Nama File:</span> <span style={{ color: colors.tealDark }}>{restoreFile.name}</span></p>
+                      <p><span className="font-medium" style={{ color: colors.tealMedium }}>Ukuran:</span> <span style={{ color: colors.tealDark }}>{(restoreFile.size / 1024).toFixed(2)} KB</span></p>
                     </div>
                   </div>
                   
-                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 rounded-xl">
-                    <p className="text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
-                      <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
+                  <div 
+                    className="p-4 rounded-xl"
+                    style={{ 
+                      backgroundColor: `${colors.gold}10`,
+                      border: `1px solid ${colors.gold}30`
+                    }}
+                  >
+                    <p className="text-xs flex items-start gap-2" style={{ color: colors.gold }}>
+                      <AlertTriangle size={16} className="shrink-0 mt-0.5" />
                       <span>
                         <strong>Perhatian:</strong> Proses restore akan mengupload ulang semua file ke storage.
                         File dengan nama yang sama akan ditimpa. Pastikan Anda memiliki koneksi internet yang stabil.
@@ -465,24 +670,35 @@ const StorageView = ({
             </div>
             
             {/* Footer */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-3">
+            <div 
+              className="p-4 border-t flex justify-end gap-3"
+              style={{ borderColor: colors.tealPale }}
+            >
               <button
                 onClick={() => {
                   setShowRestoreModal(false);
                   setRestoreFile(null);
                 }}
-                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-black text-[10px] uppercase"
+                className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-105"
+                style={{ 
+                  backgroundColor: isDarkMode ? colors.tealMedium : colors.tealPale,
+                  color: isDarkMode ? colors.tealLight : colors.tealDark
+                }}
               >
                 Batal
               </button>
               <button
                 onClick={handleRestore}
                 disabled={restoreLoading}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-[10px] uppercase flex items-center gap-2"
+                className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-105 disabled:opacity-50"
+                style={{ 
+                  background: `linear-gradient(135deg, ${colors.gold} 0%, ${colors.tealDark} 100%)`,
+                  color: 'white'
+                }}
               >
                 {restoreLoading ? (
                   <>
-                    <RefreshCw size={14} className="animate-spin" />
+                    <RefreshCw size={14} className="animate-spin inline mr-2" />
                     MEMULAI...
                   </>
                 ) : (

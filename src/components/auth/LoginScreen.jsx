@@ -1,10 +1,106 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Mail, Lock, ChevronRight, X, AlertTriangle, 
-  Sun, Moon, Phone, Globe, Coffee, Leaf,
-  ArrowRight, Eye, EyeOff, CheckCircle
+  Mail, Lock, X, AlertTriangle, 
+  Sun, Moon, Eye, EyeOff, CheckCircle,
+  ArrowRight, Sparkles, Info
 } from 'lucide-react';
-import InfoModal from './InfoModal';
+
+// --- Komponen Info Modal (Inline untuk mencegah error) ---
+const InfoModal = ({ show, onClose, branding, isDarkMode }) => {
+  if (!show) return null;
+  
+  return (
+    <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 sm:p-6">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+        onClick={onClose}
+      ></div>
+      
+      {/* Modal Content */}
+      <div className={`relative rounded-3xl shadow-2xl max-w-sm w-full transform animate-in zoom-in-95 duration-300 overflow-hidden border ${isDarkMode ? 'bg-[#111827] border-gray-800' : 'bg-white border-gray-100'}`}>
+        
+        {/* Header Gradient */}
+        <div className="h-20 bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 relative">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full backdrop-blur-md transition-colors text-white"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="pt-8 pb-6 px-6 relative">
+          {/* Icon Overlapping */}
+          <div className={`absolute -top-10 left-6 p-2 rounded-2xl shadow-xl border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+            <div className="p-3 bg-gradient-to-br from-[#d7a217]/20 to-[#d7a217]/10 rounded-xl">
+              <Info size={24} className="text-[#d7a217]" />
+            </div>
+          </div>
+
+          <h3 className={`text-xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Informasi Sistem</h3>
+          <p className={`text-xs mb-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Versi 4.0.0 (Rilis Terbaru)</p>
+
+          <div className="space-y-3 mb-6">
+            <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-50 border-gray-100'}`}>
+              <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>Aplikasi</p>
+              <p className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{branding?.name1} {branding?.name2}</p>
+            </div>
+            <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-50 border-gray-100'}`}>
+              <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>Pengembang</p>
+              <p className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Ataria Corp</p>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-colors ${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
+          >
+            Tutup Panel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Komponen Partikel Emas Mengambang ---
+const FloatingGoldParticles = () => {
+  const [particles, setParticles] = useState([]);
+
+  useEffect(() => {
+    const newParticles = Array.from({ length: 30 }).map((_, i) => ({
+      id: i,
+      size: Math.random() * 5 + 2,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      animDuration: Math.random() * 20 + 15,
+      animDelay: Math.random() * -20,
+      opacity: Math.random() * 0.4 + 0.1,
+    }));
+    setParticles(newParticles);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="absolute rounded-full bg-[#d7a217] animate-float-login"
+          style={{
+            width: `${p.size}px`, height: `${p.size}px`,
+            left: `${p.left}%`, top: `${p.top}%`,
+            opacity: p.opacity,
+            animationDuration: `${p.animDuration}s`,
+            animationDelay: `${p.animDelay}s`,
+            boxShadow: `0 0 ${p.size * 2}px #d7a217`,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
 
 const LoginScreen = ({ 
   onLogin, 
@@ -23,116 +119,171 @@ const LoginScreen = ({
   const [rememberMe, setRememberMe] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  // Efek paralaks ringan (Logika dipertahankan)
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      requestAnimationFrame(() => {
+        setMousePosition({
+          x: (e.clientX / window.innerWidth - 0.5) * 20,
+          y: (e.clientY / window.innerHeight - 0.5) * 20
+        });
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onLogin(loginEmail, loginPassword, isRegisterMode);
   };
 
-  // Background pattern (subtle)
-  const bgPattern = {
-    backgroundImage: `radial-gradient(circle at 10px 10px, rgba(180, 140, 92, 0.03) 2px, transparent 2px)`,
-    backgroundSize: '30px 30px'
+  // Palet warna Teal & Gold yang diminta
+  const colorPalette = {
+    light: {
+      bg: '#e2eceb',
+      card: 'rgba(255, 255, 255, 0.6)',
+      border: 'rgba(202, 223, 223, 0.8)',
+      text: '#425c5a',
+      accent: '#d7a217'
+    },
+    dark: {
+      bg: '#425c5a',
+      card: 'rgba(60, 86, 84, 0.4)',
+      border: 'rgba(202, 223, 223, 0.2)',
+      text: '#e2eceb',
+      accent: '#d7a217'
+    }
   };
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-[#faf7f2] to-[#f0e9db] dark:from-[#1f1812] dark:to-[#2d231b] flex items-center justify-center p-4 transition-colors duration-500 relative overflow-hidden ${isDarkMode ? 'dark' : ''}`}>
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 transition-colors duration-700 relative overflow-hidden font-sans"
+      style={{ backgroundColor: isDarkMode ? colorPalette.dark.bg : colorPalette.light.bg }}
+    >
       
-      {/* Decorative Elements */}
-      <div className="absolute inset-0 pointer-events-none" style={bgPattern}></div>
-      
-      {/* Animated Circles */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-[#b48c5c]/5 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#8b6b4c]/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      
-      {/* Floating Leaves */}
-      <div className="absolute top-20 right-20 opacity-10 animate-float">
-        <Leaf size={120} className="text-[#b48c5c]" />
-      </div>
-      <div className="absolute bottom-20 left-20 opacity-10 animate-float-delay">
-        <Coffee size={120} className="text-[#8b6b4c]" />
+      {/* --- BACKGROUND AESTHETICS --- */}
+      {/* Subtle Grid (ECharts Vibe) */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.05] z-0" 
+        style={{ 
+          backgroundImage: 'linear-gradient(#d7a217 1px, transparent 1px), linear-gradient(90deg, #d7a217 1px, transparent 1px)', 
+          backgroundSize: '40px 40px' 
+        }}
+      />
+
+      {/* Animated Orbs for Depth */}
+      <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
+        <div 
+          className="absolute w-[600px] h-[600px] rounded-full blur-[120px]"
+          style={{
+            backgroundColor: isDarkMode ? '#3c5654' : '#cadfdf',
+            opacity: 0.4,
+            transform: `translate(${mousePosition.x * 1.5}px, ${mousePosition.y * 1.5}px)`,
+            top: '-20%', left: '-10%',
+            transition: 'transform 0.3s ease-out'
+          }}
+        />
+        <div 
+          className="absolute w-[500px] h-[500px] rounded-full blur-[100px]"
+          style={{
+            backgroundColor: '#d7a217',
+            opacity: 0.15,
+            transform: `translate(${mousePosition.x * -1}px, ${mousePosition.y * -1}px)`,
+            bottom: '-10%', right: '-10%',
+            transition: 'transform 0.3s ease-out'
+          }}
+        />
       </div>
 
-      {/* Notifikasi */}
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[500] flex flex-col items-center gap-2 w-full max-w-sm pointer-events-none">
-        {notifications.map(n => (
+      {/* Floating Gold Particles */}
+      <FloatingGoldParticles />
+
+      {/* --- NOTIFICATIONS --- */}
+      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[500] flex flex-col items-center gap-3 w-full max-w-sm pointer-events-none">
+        {(notifications || []).map(n => (
           <div 
             key={n.id} 
-            className={`pointer-events-auto flex items-center gap-3 p-4 rounded-2xl shadow-2xl border animate-in slide-in-from-top-4 fade-in backdrop-blur-md w-full ${
+            className={`pointer-events-auto flex items-center gap-3 p-4 rounded-2xl shadow-xl backdrop-blur-xl animate-in slide-in-from-top-4 fade-in w-full border ${
               n.type === 'success' 
-                ? 'bg-[#8b6b4c] text-white border-[#b48c5c]' 
-                : 'bg-rose-600 text-white border-rose-500'
+                ? 'bg-emerald-500/90 text-white border-emerald-400/50' 
+                : 'bg-rose-500/90 text-white border-rose-400/50'
             }`}
           >
-            {n.type === 'success' 
-              ? <CheckCircle size={20} className="flex-shrink-0" /> 
-              : <AlertTriangle size={20} className="flex-shrink-0" />
-            }
-            <p className="text-xs font-medium tracking-wide text-white leading-tight flex-1">
-              {String(n.message || "")}
-            </p>
-            <button onClick={() => removeNotification(n.id)} className="opacity-60 hover:opacity-100 text-white">
+            {n.type === 'success' ? <CheckCircle size={20} className="shrink-0" /> : <AlertTriangle size={20} className="shrink-0" />}
+            <p className="text-[13px] font-semibold leading-snug flex-1">{String(n.message || "")}</p>
+            <button onClick={() => removeNotification(n.id)} className="opacity-70 hover:opacity-100 transition-opacity">
               <X size={16}/>
             </button>
           </div>
         ))}
       </div>
 
-      {/* Main Card */}
-      <div className="w-full max-w-md relative">
+      {/* --- MAIN LOGIN CARD --- */}
+      <div 
+        className="w-full max-w-[420px] relative z-10 animate-in zoom-in-95 duration-700"
+        style={{ transform: `translate(${mousePosition.x * 0.2}px, ${mousePosition.y * 0.2}px)` }}
+      >
         
-        {/* Card dengan efek shadow dan border */}
-        <div className="bg-white/90 dark:bg-[#2d231b]/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#e6d5bf] dark:border-[#4f3d2f] p-8 animate-in zoom-in-95 duration-500">
+        {/* Glassmorphism Container */}
+        <div 
+          className="backdrop-blur-2xl rounded-3xl p-8 sm:p-10 shadow-[0_8px_32px_rgba(0,0,0,0.1)] transition-all duration-500 group/card border"
+          style={{ 
+            backgroundColor: isDarkMode ? colorPalette.dark.card : colorPalette.light.card,
+            borderColor: isDarkMode ? colorPalette.dark.border : colorPalette.light.border,
+          }}
+        >
+          {/* Subtle Inner Glow on Hover */}
+          <div className="absolute inset-0 rounded-3xl opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 pointer-events-none shadow-[inset_0_0_50px_rgba(215,162,23,0.05)]" />
           
-          {/* Header dengan Logo */}
-          <div className="text-center mb-8">
-            <div className="relative inline-block">
-              {/* Background blur */}
-              <div className="absolute inset-0 bg-[#b48c5c]/20 rounded-full blur-xl animate-pulse"></div>
+          {/* Header & Logo */}
+          <div className="text-center mb-10 relative">
+            <div className="relative inline-flex items-center justify-center mb-6">
+              {/* Dynamic Glow Behind Logo */}
+              <div className="absolute inset-0 rounded-full blur-2xl animate-pulse" style={{ backgroundColor: '#d7a217', opacity: 0.2 }} />
               
-              {/* Logo */}
-              {branding.logoUrl ? (
+              {branding?.logoUrl ? (
                 <img 
                   src={branding.logoUrl} 
-                  alt={`${branding.name1}${branding.name2} Logo`}
-                  className="w-24 h-24 mx-auto mb-4 object-contain relative z-10"
+                  alt={`${branding?.name1 || ''}${branding?.name2 || ''} Logo`}
+                  className="w-24 h-24 object-contain relative z-10 drop-shadow-xl transition-transform duration-500 hover:scale-105"
                 />
               ) : (
-                <div className="w-24 h-24 bg-gradient-to-br from-[#b48c5c] to-[#8b6b4c] rounded-2xl flex items-center justify-center text-white font-black text-4xl mx-auto mb-4 shadow-xl shadow-[#b48c5c]/30 transform rotate-3 hover:rotate-0 transition-transform duration-300 relative z-10">
-                  {branding.icon}
+                <div 
+                  className="w-20 h-20 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl relative z-10 transition-transform duration-500 hover:scale-105"
+                  style={{ background: 'linear-gradient(135deg, #425c5a 0%, #3c5654 100%)' }}
+                >
+                  <Sparkles size={24} className="absolute top-1 right-1 text-[#d7a217]/50" />
+                  <span>{branding?.icon || 'S'}</span>
                 </div>
               )}
             </div>
             
-            <h1 className="text-3xl font-black text-[#362b21] dark:text-[#f0e9db] tracking-tight">
-              {branding.name1}
-              <span className="text-[#b48c5c] dark:text-[#d4b99b]"> {branding.name2}</span>
+            <h1 className="text-3xl font-black tracking-tight mb-2" style={{ color: isDarkMode ? colorPalette.dark.text : colorPalette.light.text }}>
+              {branding?.name1 || 'SIM'}
+              <span style={{ color: colorPalette.light.accent }}>
+                {' '}{branding?.name2 || 'ONALISA'}
+              </span>
             </h1>
             
-            <div className="mt-2 space-y-1">
-              <p className="text-sm font-medium text-[#6d5340] dark:text-[#d4b99b]">
-                {isRegisterMode ? 'Buat Akun Baru' : branding.tagline}
-              </p>
-              <p className="text-xs text-[#8b6b4c] dark:text-[#b48c5c] opacity-80">
-                {branding.subTagline}
-              </p>
-            </div>
+            <p className="text-sm font-medium tracking-wide" style={{ color: isDarkMode ? '#cadfdf' : '#3c5654', opacity: 0.8 }}>
+              {isRegisterMode ? 'Registrasi Akun Pengguna' : (branding?.tagline || 'Sistem Monitoring Analisa Anggaran')}
+            </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Form Area */}
+          <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
             
-            {/* Email Field */}
-            <div className="space-y-2">
-              <label className={`text-xs font-medium tracking-wide transition-colors duration-200 ${
-                emailFocused ? 'text-[#b48c5c]' : 'text-[#6d5340] dark:text-[#e6d5bf]'
-              }`}>
-                Email
+            {/* Email Input */}
+            <div className="space-y-1.5 group/input">
+              <label className="text-[11px] font-bold uppercase tracking-widest transition-colors duration-300 ml-1" style={{ color: emailFocused ? '#d7a217' : (isDarkMode ? '#cadfdf' : '#3c5654') }}>
+                Alamat Email
               </label>
-              <div className="relative group">
-                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-200 ${
-                  emailFocused ? 'text-[#b48c5c]' : 'text-[#8b6b4c] group-hover:text-[#b48c5c]'
-                }`}>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300" style={{ color: emailFocused ? '#d7a217' : (isDarkMode ? '#cadfdf' : '#3c5654'), opacity: emailFocused ? 1 : 0.5 }}>
                   <Mail size={18} />
                 </div>
                 <input
@@ -142,23 +293,26 @@ const LoginScreen = ({
                   onChange={(e) => setLoginEmail(e.target.value)}
                   onFocus={() => setEmailFocused(true)}
                   onBlur={() => setEmailFocused(false)}
-                  placeholder="nama@email.com"
-                  className="w-full pl-12 pr-4 py-4 bg-[#faf7f2] dark:bg-[#362b21] border-2 border-[#e6d5bf] dark:border-[#4f3d2f] rounded-xl text-sm text-[#362b21] dark:text-[#f0e9db] placeholder-[#b48c5c]/50 focus:border-[#b48c5c] dark:focus:border-[#d4b99b] outline-none transition-all duration-200"
+                  placeholder="admin@pemda.go.id"
+                  className="w-full pl-12 pr-4 py-3.5 backdrop-blur-sm rounded-2xl text-sm font-semibold outline-none transition-all duration-300 shadow-inner"
+                  style={{ 
+                    backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.5)',
+                    borderColor: emailFocused ? '#d7a217' : (isDarkMode ? 'rgba(202, 223, 223, 0.2)' : 'rgba(60, 86, 84, 0.2)'),
+                    borderWidth: '1px',
+                    color: isDarkMode ? '#e2eceb' : '#425c5a',
+                  }}
                 />
               </div>
             </div>
 
-            {/* Password Field */}
-            <div className="space-y-2">
-              <label className={`text-xs font-medium tracking-wide transition-colors duration-200 ${
-                passwordFocused ? 'text-[#b48c5c]' : 'text-[#6d5340] dark:text-[#e6d5bf]'
-              }`}>
-                Kata Sandi {isRegisterMode && '(min. 6 karakter)'}
+            {/* Password Input */}
+            <div className="space-y-1.5 group/input">
+              <label className="text-[11px] font-bold uppercase tracking-widest transition-colors duration-300 ml-1 flex justify-between" style={{ color: passwordFocused ? '#d7a217' : (isDarkMode ? '#cadfdf' : '#3c5654') }}>
+                <span>Kata Sandi</span>
+                {isRegisterMode && <span className="opacity-70 lowercase normal-case tracking-normal">(min. 6 char)</span>}
               </label>
-              <div className="relative group">
-                <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-200 ${
-                  passwordFocused ? 'text-[#b48c5c]' : 'text-[#8b6b4c] group-hover:text-[#b48c5c]'
-                }`}>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300" style={{ color: passwordFocused ? '#d7a217' : (isDarkMode ? '#cadfdf' : '#3c5654'), opacity: passwordFocused ? 1 : 0.5 }}>
                   <Lock size={18} />
                 </div>
                 <input
@@ -170,12 +324,19 @@ const LoginScreen = ({
                   onBlur={() => setPasswordFocused(false)}
                   minLength={isRegisterMode ? 6 : 1}
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-12 py-4 bg-[#faf7f2] dark:bg-[#362b21] border-2 border-[#e6d5bf] dark:border-[#4f3d2f] rounded-xl text-sm text-[#362b21] dark:text-[#f0e9db] placeholder-[#b48c5c]/50 focus:border-[#b48c5c] dark:focus:border-[#d4b99b] outline-none transition-all duration-200"
+                  className="w-full pl-12 pr-12 py-3.5 backdrop-blur-sm rounded-2xl text-sm font-semibold outline-none transition-all duration-300 shadow-inner"
+                  style={{ 
+                    backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.5)',
+                    borderColor: passwordFocused ? '#d7a217' : (isDarkMode ? 'rgba(202, 223, 223, 0.2)' : 'rgba(60, 86, 84, 0.2)'),
+                    borderWidth: '1px',
+                    color: isDarkMode ? '#e2eceb' : '#425c5a',
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8b6b4c] hover:text-[#b48c5c] transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-110"
+                  style={{ color: '#d7a217', opacity: loginPassword ? 1 : 0.5 }}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -184,105 +345,123 @@ const LoginScreen = ({
 
             {/* Remember Me & Forgot Password */}
             {!isRegisterMode && (
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded border-[#e6d5bf] text-[#b48c5c] focus:ring-[#b48c5c]"
-                  />
-                  <span className="text-xs text-[#6d5340] dark:text-[#e6d5bf]">Ingat saya</span>
+              <div className="flex items-center justify-between pt-1">
+                <label className="flex items-center gap-2 cursor-pointer group/check">
+                  <div className="relative flex items-center justify-center w-4 h-4 rounded border transition-colors duration-300" style={{ borderColor: rememberMe ? '#d7a217' : (isDarkMode ? '#cadfdf' : '#3c5654'), backgroundColor: rememberMe ? '#d7a217' : 'transparent' }}>
+                    <input type="checkbox" className="sr-only" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+                    {rememberMe && <CheckCircle size={12} color="white" className="absolute" />}
+                  </div>
+                  <span className="text-xs font-semibold transition-colors" style={{ color: isDarkMode ? '#cadfdf' : '#3c5654' }}>Ingat Saya</span>
                 </label>
-                <button
-                  type="button"
-                  className="text-xs text-[#8b6b4c] hover:text-[#b48c5c] transition-colors"
-                >
-                  Lupa password?
+                <button type="button" className="text-xs font-bold hover:underline transition-all" style={{ color: '#d7a217' }}>
+                  Lupa Sandi?
                 </button>
               </div>
             )}
 
-            {/* Submit Button */}
+            {/* Submit Button (Premium Look) */}
             <button
               type="submit"
               disabled={isLoggingIn}
-              className="w-full relative group overflow-hidden"
+              className="w-full relative group/btn overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-lg"
+              style={{ boxShadow: isLoggingIn ? 'none' : '0 8px 20px rgba(215, 162, 23, 0.25)' }}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-[#b48c5c] to-[#8b6b4c] rounded-xl opacity-100 group-hover:opacity-90 transition-opacity"></div>
-              <div className="relative px-6 py-4 flex items-center justify-center gap-2 text-white font-bold text-sm tracking-wide">
+              <div className="absolute inset-0 transition-opacity duration-300 bg-gradient-to-br from-[#d7a217] to-[#b58812]" />
+              <div className="absolute inset-0 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-150%] group-hover/btn:translate-x-[150%]" />
+              
+              <div className="relative px-6 py-4 flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest text-xs">
                 {isLoggingIn ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Memproses...</span>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span>MEMPROSES...</span>
                   </>
                 ) : (
                   <>
-                    <span>{isRegisterMode ? 'Daftar Sekarang' : 'Masuk ke Aplikasi'}</span>
-                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                    <span>{isRegisterMode ? 'Daftar Sekarang' : 'Masuk Sistem'}</span>
+                    <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
                   </>
                 )}
               </div>
             </button>
 
-            {/* Toggle Register/Login */}
-            <div className="text-center">
+            {/* Toggle Mode */}
+            <div className="text-center pt-3">
               <button
                 type="button"
                 onClick={() => setIsRegisterMode(!isRegisterMode)}
-                className="text-sm text-[#8b6b4c] hover:text-[#b48c5c] transition-colors"
+                className="text-xs font-medium transition-colors hover:underline"
+                style={{ color: isDarkMode ? '#cadfdf' : '#3c5654' }}
               >
                 {isRegisterMode ? (
-                  <>Sudah punya akun? <span className="font-bold">Masuk</span></>
+                  <>Sudah terdaftar? <span style={{ color: '#d7a217', fontWeight: 'bold' }}>Login</span></>
                 ) : (
-                  <>Belum punya akun? <span className="font-bold">Daftar</span></>
+                  <>Belum memiliki akses? <span style={{ color: '#d7a217', fontWeight: 'bold' }}>Daftar</span></>
                 )}
               </button>
             </div>
           </form>
 
-          {/* Footer */}
-          <div className="mt-8 text-center">
+          {/* Footer Info */}
+          <div className="mt-8 text-center relative z-10 border-t pt-4" style={{ borderColor: isDarkMode ? 'rgba(202, 223, 223, 0.1)' : 'rgba(60, 86, 84, 0.1)' }}>
             <button
               onClick={() => setShowInfoModal(true)}
-              className="text-xs text-[#8b6b4c]/60 hover:text-[#b48c5c] transition-colors border-t border-[#e6d5bf] dark:border-[#4f3d2f] pt-4 w-full"
+              className="text-[10px] font-bold tracking-widest uppercase transition-colors hover:scale-105 transform inline-block"
+              style={{ color: '#d7a217' }}
             >
-              © 2026 Ataria Corp • {branding.name1}{branding.name2} v1.0
+              © {new Date().getFullYear()} Ataria Corp
             </button>
           </div>
         </div>
       </div>
 
-      {/* Dark Mode Toggle */}
-      <button
-        onClick={toggleDarkMode}
-        className="fixed bottom-6 right-6 p-4 bg-white dark:bg-[#2d231b] rounded-full shadow-lg border border-[#e6d5bf] dark:border-[#4f3d2f] hover:shadow-xl transition-all group"
-      >
-        {isDarkMode ? 
-          <Sun size={20} className="text-[#b48c5c] group-hover:rotate-90 transition-transform" /> : 
-          <Moon size={20} className="text-[#8b6b4c] group-hover:rotate-12 transition-transform" />
-        }
-      </button>
+      {/* --- FLOATING TOGGLES (Dark Mode & Info) --- */}
+      <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
+        <button
+          onClick={() => setShowInfoModal(true)}
+          className="p-3.5 backdrop-blur-xl rounded-full shadow-lg border transition-all duration-300 hover:scale-110 hover:shadow-xl group"
+          style={{ 
+            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.6)' : 'rgba(255, 255, 255, 0.6)',
+            borderColor: isDarkMode ? 'rgba(202, 223, 223, 0.2)' : 'rgba(60, 86, 84, 0.2)'
+          }}
+          title="Informasi Sistem"
+        >
+          <Info size={18} style={{ color: '#d7a217' }} className="group-hover:rotate-12 transition-transform" />
+        </button>
 
-      {/* Info Modal */}
+        <button
+          onClick={toggleDarkMode}
+          className="p-3.5 backdrop-blur-xl rounded-full shadow-lg border transition-all duration-300 hover:scale-110 hover:shadow-xl group"
+          style={{ 
+            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.6)' : 'rgba(255, 255, 255, 0.6)',
+            borderColor: isDarkMode ? 'rgba(202, 223, 223, 0.2)' : 'rgba(60, 86, 84, 0.2)'
+          }}
+          title="Toggle Tema"
+        >
+          {isDarkMode ? 
+            <Sun size={18} style={{ color: '#d7a217' }} className="group-hover:rotate-90 transition-transform" /> : 
+            <Moon size={18} style={{ color: '#d7a217' }} className="group-hover:-rotate-12 transition-transform" />
+          }
+        </button>
+      </div>
+
+      {/* Info Modal Component */}
       <InfoModal
         show={showInfoModal}
         onClose={() => setShowInfoModal(false)}
         branding={branding}
+        isDarkMode={isDarkMode}
       />
 
-      {/* Custom CSS Animations */}
+      {/* CSS Animations */}
       <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(5deg); }
+        @keyframes float-login {
+          0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+          20% { opacity: var(--opacity, 0.4); }
+          80% { opacity: var(--opacity, 0.4); }
+          100% { transform: translateY(-100px) translateX(30px) scale(0.8); opacity: 0; }
         }
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-        .animate-float-delay {
-          animation: float 8s ease-in-out infinite;
-          animation-delay: 1s;
+        .animate-float-login {
+          animation: float-login linear infinite;
         }
       `}</style>
     </div>

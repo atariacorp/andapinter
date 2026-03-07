@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Users, Plus, Trash2 } from 'lucide-react';  // <-- TAMBAHKAN Trash2 DI SINI
+import { Users, Plus, UserCog, Briefcase, Hash, Trash2 } from 'lucide-react';
 import MasterDataTable from '../common/MasterDataTable';
 
 const TapdTab = ({ 
   tapdList, 
   onAdd, 
   onDelete, 
-  isProcessing 
+  isProcessing,
+  isDarkMode,
+  colors 
 }) => {
   const [newTapd, setNewTapd] = useState({ nip: '', nama: '', jabatan: '' });
 
@@ -24,102 +26,208 @@ const TapdTab = ({
     setNewTapd(prev => ({ ...prev, [field]: value }));
   };
 
+  // Glass card style
+  const glassCard = `backdrop-blur-md rounded-2xl border transition-all hover:shadow-xl p-6 ${
+    isDarkMode 
+      ? 'bg-[#3c5654]/30 border-[#d7a217]/20' 
+      : 'bg-white/70 border-[#cadfdf]'
+  }`;
+
+  const glassInput = `w-full p-3 rounded-xl text-sm outline-none transition-all focus:ring-2 ${
+    isDarkMode 
+      ? 'bg-[#3c5654]/30 border-[#d7a217]/30 text-[#e2eceb] focus:ring-[#d7a217]/50' 
+      : 'bg-white/70 border-[#cadfdf] text-[#425c5a] focus:ring-[#d7a217]/50'
+  }`;
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
       {/* Left Column - Form */}
-      <div className="lg:col-span-5 space-y-4">
+      <div className="lg:col-span-5 space-y-5">
         
-        {/* Form Tambah */}
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
-          <h2 className="text-sm font-black text-slate-700 dark:text-slate-200 uppercase flex items-center gap-2 mb-2">
-            <Users size={16} className="text-blue-500"/> Input Anggota TAPD
-          </h2>
-          
-          <div>
-            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase mb-1 block">
-              NIP / ID
-            </label>
-            <input 
-              required 
-              value={newTapd.nip} 
-              onChange={e => handleChange('nip', e.target.value)} 
-              placeholder="Contoh: 198001012005011001" 
-              className="w-full p-3 border rounded-xl text-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
+        {/* Form Tambah TAPD */}
+        <div className={glassCard}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2.5 rounded-lg" style={{ backgroundColor: `${colors.gold}20` }}>
+              <UserCog size={18} style={{ color: colors.gold }} />
+            </div>
+            <h3 className="text-sm font-bold" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
+              Tambah Anggota TAPD
+            </h3>
           </div>
           
-          <div>
-            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase mb-1 block">
-              Nama Lengkap
-            </label>
-            <input 
-              required 
-              value={newTapd.nama} 
-              onChange={e => handleChange('nama', e.target.value)} 
-              placeholder="Nama Pejabat beserta Gelar..." 
-              className="w-full p-3 border rounded-xl text-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-          
-          <div>
-            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase mb-1 block">
-              Jabatan
-            </label>
-            <input 
-              required 
-              value={newTapd.jabatan} 
-              onChange={e => handleChange('jabatan', e.target.value)} 
-              placeholder="Contoh: KEPALA DINAS" 
-              className="w-full p-3 border rounded-xl text-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-          
-          <button 
-            type="submit" 
-            disabled={isProcessing}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold uppercase text-[10px] shadow-lg transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Plus size={16} />
-            {isProcessing ? 'MENYIMPAN...' : 'Tambah Anggota TAPD'}
-          </button>
-        </form>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            
+            {/* NIP */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium flex items-center gap-1" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
+                <Hash size={12} style={{ color: colors.gold }} />
+                NIP / ID
+              </label>
+              <input 
+                required 
+                value={newTapd.nip} 
+                onChange={e => handleChange('nip', e.target.value)} 
+                placeholder="Contoh: 198001012005011001" 
+                className={glassInput}
+                style={{ borderWidth: '1px', borderStyle: 'solid' }}
+              />
+            </div>
+            
+            {/* Nama Lengkap */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium flex items-center gap-1" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
+                <Users size={12} style={{ color: colors.gold }} />
+                Nama Lengkap
+              </label>
+              <input 
+                required 
+                value={newTapd.nama} 
+                onChange={e => handleChange('nama', e.target.value)} 
+                placeholder="Nama Pejabat beserta Gelar..." 
+                className={glassInput}
+                style={{ borderWidth: '1px', borderStyle: 'solid' }}
+              />
+            </div>
+            
+            {/* Jabatan */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium flex items-center gap-1" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
+                <Briefcase size={12} style={{ color: colors.gold }} />
+                Jabatan
+              </label>
+              <input 
+                required 
+                value={newTapd.jabatan} 
+                onChange={e => handleChange('jabatan', e.target.value)} 
+                placeholder="Contoh: KEPALA DINAS" 
+                className={glassInput}
+                style={{ borderWidth: '1px', borderStyle: 'solid' }}
+              />
+            </div>
+            
+            <button 
+              type="submit" 
+              disabled={isProcessing}
+              className="w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ 
+                background: `linear-gradient(135deg, ${colors.gold} 0%, ${colors.tealDark} 100%)`,
+                color: 'white'
+              }}
+            >
+              <Plus size={14} />
+              {isProcessing ? 'MENYIMPAN...' : 'TAMBAH ANGGOTA TAPD'}
+            </button>
+          </form>
+        </div>
         
-        <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl text-emerald-700 dark:text-emerald-300 text-xs italic">
-          Nama-nama ini akan secara otomatis muncul sebagai kolom tanda tangan verifikator pada form cetak Berita Acara (PDF) berkas.
+        {/* Informasi */}
+        <div 
+          className="p-5 rounded-xl text-xs"
+          style={{ 
+            backgroundColor: `${colors.gold}10`,
+            border: `1px solid ${colors.gold}30`,
+          }}
+        >
+          <div className="flex items-start gap-3">
+            <Briefcase size={18} style={{ color: colors.gold }} className="shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold mb-2" style={{ color: colors.gold }}>Informasi TAPD</p>
+              <p style={{ color: isDarkMode ? colors.tealLight : colors.tealMedium }}>
+                Nama-nama ini akan muncul sebagai kolom tanda tangan verifikator pada Berita Acara (BA) cetak.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
       
       {/* Right Column - Data Table */}
       <div className="lg:col-span-7">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm h-[600px] flex flex-col overflow-hidden">
-          <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center font-black text-[10px] uppercase tracking-widest text-slate-600 dark:text-slate-400">
-            Susunan TAPD
-            <span className="bg-blue-600 text-white px-3 py-1 rounded-full">{tapdList.length}</span>
+        <div 
+          className="backdrop-blur-md rounded-2xl border h-[600px] flex flex-col overflow-hidden transition-all hover:shadow-xl"
+          style={{ 
+            backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'rgba(255, 255, 255, 0.7)',
+            borderColor: isDarkMode ? 'rgba(215, 162, 23, 0.2)' : colors.tealPale
+          }}
+        >
+          {/* Header */}
+          <div 
+            className="p-4 border-b flex justify-between items-center font-bold text-xs uppercase tracking-wider"
+            style={{ 
+              borderColor: colors.tealPale,
+              backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.2)' : 'rgba(202, 223, 223, 0.3)'
+            }}
+          >
+            <span style={{ color: colors.tealDark }}>Daftar Anggota TAPD</span>
+            <span 
+              className="px-3 py-1 rounded-full text-[9px] font-bold"
+              style={{ 
+                backgroundColor: `${colors.gold}20`,
+                color: colors.gold
+              }}
+            >
+              {tapdList.length} Anggota
+            </span>
           </div>
           
-          <div className="overflow-y-auto p-4 flex flex-col gap-3 scrollbar-hide">
+          {/* Content */}
+          <div className="overflow-y-auto p-4 grid grid-cols-1 gap-3 scrollbar-hide flex-1">
             {tapdList.length > 0 ? (
-              tapdList.map(t => (
-                <div key={t.id} className="p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl flex justify-between items-start group hover:border-blue-200 dark:hover:border-blue-600 shadow-sm transition-all">
-                  <div>
-                    <p className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase">{String(t.nama)}</p>
-                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">NIP: {String(t.nip)}</p>
-                    <p className="text-[10px] text-blue-600 dark:text-blue-400 font-bold mt-1 uppercase tracking-widest bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded inline-block">
-                      {String(t.jabatan)}
+              tapdList.map(item => (
+                <div 
+                  key={item.id} 
+                  className="p-4 rounded-xl flex justify-between items-center group transition-all hover:scale-[1.02] hover:shadow-md"
+                  style={{ 
+                    backgroundColor: isDarkMode ? 'rgba(60, 86, 84, 0.3)' : 'white',
+                    border: `1px solid ${isDarkMode ? 'rgba(215, 162, 23, 0.2)' : colors.tealPale}`
+                  }}
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div 
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+                        style={{ backgroundColor: `${colors.gold}20`, color: colors.gold }}
+                      >
+                        {item.nama?.charAt(0) || 'T'}
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm" style={{ color: colors.tealDark }}>
+                          {item.nama}
+                        </p>
+                        <p className="text-xs font-medium" style={{ color: colors.tealMedium }}>
+                          {item.jabatan}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-mono" style={{ color: isDarkMode ? colors.tealLight : colors.tealMedium }}>
+                      NIP: {item.nip}
                     </p>
                   </div>
+                  
                   <button 
-                    onClick={() => onDelete(t)} 
-                    className="text-slate-300 dark:text-slate-600 hover:text-rose-600 dark:hover:text-rose-400 p-1"
+                    onClick={() => onDelete(item)} 
+                    className="p-2 rounded-lg transition-all hover:scale-110"
+                    style={{ 
+                      backgroundColor: `${colors.tealDark}20`,
+                      color: colors.tealDark
+                    }}
+                    title="Hapus"
                   >
-                    <Trash2 size={16}/>  {/* <-- SEKARANG SUDAH TERDEFINISI */}
+                    <Trash2 size={16} />
                   </button>
                 </div>
               ))
             ) : (
-              <p className="text-center text-slate-400 italic text-sm mt-10">
-                Belum ada data TAPD
-              </p>
+              <div className="text-center py-12">
+                <Users 
+                  size={48} 
+                  className="mx-auto mb-3 opacity-30"
+                  style={{ color: colors.tealMedium }}
+                />
+                <p className="text-sm italic" style={{ color: colors.tealMedium }}>
+                  Belum ada anggota TAPD
+                </p>
+              </div>
             )}
           </div>
         </div>

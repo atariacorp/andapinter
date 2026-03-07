@@ -15,6 +15,16 @@ import {
   Leaf
 } from 'lucide-react';
 import NavItem from '../common/NavItem';
+import NotificationBell from '../common/NotificationBell';
+
+// Definisikan palet warna di sini
+const colors = {
+  tealDark: '#425c5a',
+  tealMedium: '#3c5654',
+  tealLight: '#e2eceb',
+  tealPale: '#cadfdf',
+  gold: '#d7a217'
+};
 
 const Sidebar = ({ 
   isMobileMenuOpen, 
@@ -33,7 +43,7 @@ const Sidebar = ({
 }) => {
   return (
     <>
-      {/* Overlay untuk mobile dengan efek blur */}
+      {/* Overlay untuk mobile */}
       {isMobileMenuOpen && (
         <div 
           className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden" 
@@ -177,21 +187,10 @@ const Sidebar = ({
               />
             )}
             
-            {/* Tombol Notifikasi dengan desain coklat */}
-            <button 
-              onClick={() => setShowNotificationPanel(!showNotificationPanel)}
-              className="w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-[#4f3822]/50 hover:bg-[#7b5435]/50 text-[#e6c3a0] hover:text-white transition-all duration-300 font-bold text-xs uppercase tracking-widest relative group"
-            >
-              <div className="flex items-center gap-2">
-                <Bell size={16} className="text-[#d7a370] group-hover:text-[#e6c3a0] transition-colors" />
-                <span>Notifikasi</span>
-              </div>
-              {unreadCount > 0 && (
-                <span className="bg-[#b87e4f] text-white text-[8px] rounded-full w-5 h-5 flex items-center justify-center animate-pulse shadow-lg">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </button>
+            {/* Notifikasi dengan Bell Baru */}
+            <div className="relative">
+              <NotificationBell isDarkMode={isDarkMode} colors={colors} />
+            </div>
 
             {/* Dark Mode Toggle dengan desain coklat */}
             <button 
@@ -227,13 +226,13 @@ const Sidebar = ({
                 </div>
               </div>
 
-              {/* Tombol Logout */}
+              {/* Tombol Logout - MERAH DENGAN TAILWIND */}
               <button 
-                onClick={onLogout} 
-                className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-[#b87e4f]/20 hover:bg-[#b87e4f]/40 text-[#e6c3a0] hover:text-white transition-all duration-300 font-bold text-[10px] uppercase tracking-widest border border-[#d7a370]/30"
+              onClick={onLogout} 
+              className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 hover:text-rose-600 transition-all duration-300 font-bold text-[10px] uppercase tracking-widest border border-rose-500/30 hover:border-rose-500/50 backdrop-blur-md"
               >
-                <LogOut size={14}/> Keluar Akun
-              </button>
+              <LogOut size={14}/> Keluar Akun
+            </button>
             </div>
 
             {/* Decorative Elements */}

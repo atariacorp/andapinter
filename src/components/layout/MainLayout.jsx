@@ -114,19 +114,22 @@ const MainLayout = ({
         <main className="flex-grow p-6 lg:p-8 overflow-y-auto scrollbar-hide text-left print:hidden bg-gradient-to-br from-[#faf7f2] to-[#f0e9db] dark:from-[#2c1e12] dark:to-[#1f1510]">
   
   {/* Dashboard View */}
-  {view === 'dashboard' && (
-    <DashboardView 
-      filteredProposals={proposals.filteredProposals}
-      tahapList={masterData.tahapList}
-      tahunList={masterData.tahunList}
-      selectedTahap={proposals.selectedTahap}
-      setSelectedTahap={proposals.setSelectedTahap}
-      selectedYear={proposals.selectedYear}
-      setSelectedYear={proposals.setSelectedYear}
-      setCurrentPage={setCurrentPage}
-      isDarkMode={isDarkMode}
-    />
-  )}
+{view === 'dashboard' && (
+  <DashboardView 
+    filteredProposals={proposals.filteredProposals}
+    tahapList={masterData.tahapList}
+    tahunList={masterData.tahunList}
+    selectedTahap={proposals.selectedTahap}
+    setSelectedTahap={proposals.setSelectedTahap}
+    selectedYear={proposals.selectedYear}
+    setSelectedYear={proposals.setSelectedYear}
+    setCurrentPage={setCurrentPage}
+    setView={setView}           // <-- TAMBAHKAN INI
+    proposals={proposals}       // <-- TAMBAHKAN INI
+    branding={branding}
+    isDarkMode={isDarkMode}
+  />
+)}
 
   {/* List View */}
   {view === 'list' && (

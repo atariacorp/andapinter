@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Settings as SettingsIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Settings as SettingsIcon, Sparkles } from 'lucide-react';
 import SettingsTabs from './SettingsTabs';
 import BrandingTab from './BrandingTab';
 import SkpdTab from './SkpdTab';
@@ -10,13 +10,51 @@ import TapdTab from './TapdTab';
 import UsersTab from './UsersTab';
 import BankSroTab from './BankSroTab';
 
+// Komponen Floating Particles
+const FloatingGoldParticles = () => {
+  const [particles, setParticles] = useState([]);
+
+  useEffect(() => {
+    const newParticles = Array.from({ length: 20 }).map((_, i) => ({
+      id: i,
+      size: Math.random() * 4 + 1,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      animDuration: Math.random() * 15 + 10,
+      animDelay: Math.random() * -15,
+      opacity: Math.random() * 0.3 + 0.1,
+    }));
+    setParticles(newParticles);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="absolute rounded-full bg-[#d7a217] animate-float-settings"
+          style={{
+            width: `${p.size}px`, height: `${p.size}px`,
+            left: `${p.left}%`, top: `${p.top}%`,
+            opacity: p.opacity,
+            animationDuration: `${p.animDuration}s`,
+            animationDelay: `${p.animDelay}s`,
+            boxShadow: `0 0 ${p.size * 2}px #d7a217`,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
 const SettingsView = ({
   currentUserProfile,
   masterData,
   addNotification,
   setDeleteConfirm,
   isProcessing,
-  setIsProcessing
+  setIsProcessing,
+  isDarkMode
 }) => {
   const [activeTab, setActiveTab] = useState('master-skpd');
   const [brandingForm, setBrandingForm] = useState(masterData.branding || {});
@@ -30,7 +68,64 @@ const SettingsView = ({
     errors: []
   });
 
+  // State untuk efek paralaks
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  // Efek paralaks ringan
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      requestAnimationFrame(() => {
+        setMousePosition({
+          x: (e.clientX / window.innerWidth - 0.5) * 15,
+          y: (e.clientY / window.innerHeight - 0.5) * 15
+        });
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Palet warna teal & gold
+  const colors = {
+    tealDark: '#425c5a',
+    tealMedium: '#3c5654',
+    tealLight: '#e2eceb',
+    tealPale: '#cadfdf',
+    gold: '#d7a217'
+  };
+
   // ========== HANDLERS ==========
+
+  // SKPD - Tambah handler edit
+const handleEditSkpd = async (id, newName) => {
+  setIsProcessing(true);
+  try {
+    // Panggil fungsi edit dari masterData
+    await masterData.updateSkpd(id, newName);
+    addNotification("Nama SKPD berhasil diperbarui", "success");
+  } catch (err) {
+    addNotification("Gagal memperbarui SKPD", "error");
+    console.error(err);
+  } finally {
+    setIsProcessing(false);
+  }
+};
+
+// Sub Kegiatan - Tambah handler edit
+const handleEditSubKeg = async (id, newName) => {
+  setIsProcessing(true);
+  try {
+    // Panggil fungsi edit dari masterData
+    await masterData.updateSubKeg(id, newName);
+    addNotification("Nama Sub Kegiatan berhasil diperbarui", "success");
+  } catch (err) {
+    addNotification("Gagal memperbarui Sub Kegiatan", "error");
+    console.error(err);
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   // Branding
   const handleSaveBranding = async (formData) => {
@@ -399,24 +494,90 @@ const SettingsView = ({
   };
 
   return (
-    <div className="space-y-6 animate-in slide-in-from-bottom-4 pb-20">
+    <div className="space-y-6 animate-in fade-in relative min-h-screen">
+      
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Animated orbs dengan efek paralaks */}
+        <div 
+          className="absolute w-96 h-96 rounded-full blur-3xl"
+          style={{
+            backgroundColor: colors.gold,
+            opacity: 0.03,
+            transform: `translate(${mousePosition.x * 0.5}px, ${mousePosition.y * 0.5}px)`,
+            top: '10%',
+            right: '5%',
+            transition: 'transform 0.2s ease-out'
+          }}
+        />
+        
+        <div 
+          className="absolute w-[500px] h-[500px] rounded-full blur-3xl"
+          style={{
+            backgroundColor: colors.tealDark,
+            opacity: 0.03,
+            transform: `translate(${mousePosition.x * -0.3}px, ${mousePosition.y * -0.3}px)`,
+            bottom: '5%',
+            left: '5%',
+            transition: 'transform 0.2s ease-out'
+          }}
+        />
+        
+        {/* Grid pattern subtle */}
+        <div 
+          className="absolute inset-0 opacity-[0.02]"
+          style={{ 
+            backgroundImage: `linear-gradient(${colors.gold} 1px, transparent 1px), linear-gradient(90deg, ${colors.gold} 1px, transparent 1px)`,
+            backgroundSize: '40px 40px'
+          }}
+        />
+      </div>
+
+      {/* Floating particles */}
+      <FloatingGoldParticles />
       
       {/* Header */}
-      <header>
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
-          <SettingsIcon size={24} className="text-blue-500" />
-          Pengaturan Master
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm">
-          Kelola instansi, sub kegiatan, tahap, user, dan database sistem
-        </p>
+      <header className="relative z-10">
+        <div className="flex items-center gap-4 mb-4">
+          <div 
+            className="p-4 rounded-2xl"
+            style={{ backgroundColor: `${colors.gold}20` }}
+          >
+            <SettingsIcon size={28} style={{ color: colors.gold }} />
+          </div>
+          <div>
+            <h1 
+              className="text-3xl font-bold tracking-tight flex items-center gap-3"
+              style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}
+            >
+              Pengaturan Master
+              <span 
+                className="text-xs px-3 py-1 rounded-full font-medium"
+                style={{ 
+                  backgroundColor: `${colors.gold}20`,
+                  color: colors.gold
+                }}
+              >
+                Admin Area
+              </span>
+            </h1>
+            <p 
+              className="text-sm mt-1"
+              style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}
+            >
+              Kelola instansi, sub kegiatan, tahap, user, dan database sistem
+            </p>
+          </div>
+        </div>
       </header>
 
       {/* Tabs Navigation */}
-      <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="relative z-10">
+        <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab} isDarkMode={isDarkMode} colors={colors} />
+      </div>
 
       {/* Tab Content */}
-      <div className="mt-6">
+      <div className="relative z-10 mt-8">
         {activeTab === 'branding' && (
           <BrandingTab
             branding={masterData.branding}
@@ -424,6 +585,8 @@ const SettingsView = ({
             setBrandingForm={setBrandingForm}
             onSave={handleSaveBranding}
             isProcessing={isProcessing}
+            isDarkMode={isDarkMode}
+            colors={colors}
           />
         )}
 
@@ -431,10 +594,13 @@ const SettingsView = ({
           <SkpdTab
             skpdList={masterData.skpdList}
             onAdd={handleAddSkpd}
+            onEdit={handleEditSkpd}
             onDelete={handleDeleteSkpd}
             onImport={handleImportMaster}
             onDownloadTemplate={() => handleDownloadTemplate('skpd')}
             isProcessing={isProcessing}
+            isDarkMode={isDarkMode}
+            colors={colors}
           />
         )}
 
@@ -442,10 +608,13 @@ const SettingsView = ({
           <SubKegTab
             subKegList={masterData.subKegList}
             onAdd={handleAddSubKeg}
+            onEdit={handleEditSubKeg}
             onDelete={handleDeleteSubKeg}
             onImport={handleImportMaster}
             onDownloadTemplate={() => handleDownloadTemplate('sub_keg')}
             isProcessing={isProcessing}
+            isDarkMode={isDarkMode}
+            colors={colors}
           />
         )}
 
@@ -456,6 +625,8 @@ const SettingsView = ({
             onDelete={handleDeleteTahap}
             onGenerateDefault={handleGenerateDefaultTahap}
             isProcessing={isProcessing}
+            isDarkMode={isDarkMode}
+            colors={colors}
           />
         )}
 
@@ -466,6 +637,8 @@ const SettingsView = ({
             onDelete={handleDeleteTahun}
             onGenerateDefault={handleGenerateDefaultTahun}
             isProcessing={isProcessing}
+            isDarkMode={isDarkMode}
+            colors={colors}
           />
         )}
 
@@ -475,6 +648,8 @@ const SettingsView = ({
             onAdd={handleAddTapd}
             onDelete={handleDeleteTapd}
             isProcessing={isProcessing}
+            isDarkMode={isDarkMode}
+            colors={colors}
           />
         )}
 
@@ -485,6 +660,8 @@ const SettingsView = ({
             onAdd={handleAddUser}
             onDelete={handleDeleteUser}
             isProcessing={isProcessing}
+            isDarkMode={isDarkMode}
+            colors={colors}
           />
         )}
 
@@ -499,9 +676,26 @@ const SettingsView = ({
             onDownloadTemplate={handleDownloadTemplateSro}
             isProcessing={isProcessing}
             importProgress={importProgress}
+            isDarkMode={isDarkMode}
+            colors={colors}
           />
         )}
       </div>
+
+      {/* Custom CSS Animations */}
+      <style>{`
+        @keyframes float-settings {
+          0% { transform: translateY(0) translateX(0); opacity: 0; }
+          20% { opacity: var(--opacity); }
+          80% { opacity: var(--opacity); }
+          100% { transform: translateY(-80px) translateX(30px); opacity: 0; }
+        }
+        .animate-float-settings {
+          animation-name: float-settings;
+          animation-timing-function: ease-in-out;
+          animation-iteration-count: infinite;
+        }
+      `}</style>
     </div>
   );
 };

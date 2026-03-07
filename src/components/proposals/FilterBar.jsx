@@ -1,5 +1,42 @@
-import React from 'react';
-import { Search, FileSpreadsheet, CalendarDays, Layers, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, CalendarDays, Layers, Filter, Download, Plus, CheckSquare } from 'lucide-react';
+
+// --- Komponen Partikel Emas Mengambang Khusus Filter Bar ---
+const FloatingGoldParticles = () => {
+  const [particles, setParticles] = useState([]);
+
+  useEffect(() => {
+    const newParticles = Array.from({ length: 15 }).map((_, i) => ({
+      id: i,
+      size: Math.random() * 4 + 2,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      animDuration: Math.random() * 15 + 10,
+      animDelay: Math.random() * -15,
+      opacity: Math.random() * 0.3 + 0.1,
+    }));
+    setParticles(newParticles);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 rounded-2xl">
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="absolute rounded-full bg-[#d7a217] animate-float-filter"
+          style={{
+            width: `${p.size}px`, height: `${p.size}px`,
+            left: `${p.left}%`, top: `${p.top}%`,
+            opacity: p.opacity,
+            animationDuration: `${p.animDuration}s`,
+            animationDelay: `${p.animDelay}s`,
+            boxShadow: `0 0 ${p.size * 2}px #d7a217`,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
 
 const FilterBar = ({
   searchTerm,
@@ -17,156 +54,208 @@ const FilterBar = ({
   onBulkAction,
   onExportCSV,
   onAddNew,
-  isProcessing
+  isProcessing,
+  isDarkMode
 }) => {
+  
+  // Palet warna teal & gold
+  const colors = {
+    tealDark: '#425c5a',
+    tealMedium: '#3c5654',
+    tealLight: '#e2eceb',
+    tealPale: '#cadfdf',
+    gold: '#d7a217'
+  };
+
+  const glassInput = isDarkMode
+    ? "bg-black/20 border border-[#cadfdf]/20 text-[#e2eceb] focus:ring-2 focus:ring-[#d7a217]/50 rounded-xl outline-none transition-all duration-300 placeholder-[#cadfdf]/40"
+    : "bg-white/70 border border-[#cadfdf]/60 text-[#425c5a] focus:ring-2 focus:ring-[#d7a217]/50 rounded-xl outline-none transition-all duration-300 placeholder-[#3c5654]/50";
+
   return (
-    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-      <div>
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-          Daftar Usulan Pergeseran
-        </h2>
-        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest italic">
-          Akses: {currentUserLevel}
-        </p>
-      </div>
-      
-      <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+    <div 
+      className={`relative p-5 rounded-2xl backdrop-blur-xl border transition-all duration-500 shadow-sm hover:shadow-xl group/filterbar ${
+        isDarkMode 
+          ? 'bg-[#3c5654]/40 border-[#cadfdf]/20 hover:shadow-[0_8px_32px_rgba(0,0,0,0.2)]' 
+          : 'bg-white/60 border-[#cadfdf]/80 hover:shadow-[0_8px_32px_rgba(0,0,0,0.05)]'
+      }`}
+    >
+      {/* Background Aesthetic ECharts (Subtle Grid) & Particles */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-[0.04] dark:opacity-[0.06] z-0 rounded-2xl" 
+        style={{ 
+          backgroundImage: 'linear-gradient(#d7a217 1px, transparent 1px), linear-gradient(90deg, #d7a217 1px, transparent 1px)', 
+          backgroundSize: '24px 24px' 
+        }}
+      />
+      <FloatingGoldParticles />
+
+      <div className="relative z-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
         
-        {/* BULK ACTION BUTTONS */}
-        {selectedForBulk.length > 0 && ['Admin', 'Operator BKAD'].includes(currentUserLevel) && (
-          <div className="flex gap-2 mr-2 border-r pr-4 border-slate-200 dark:border-slate-700 items-center">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-300 mr-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-              {selectedForBulk.length} Terpilih
-            </span>
-            
-            {currentUserLevel === 'Operator BKAD' && (
-              <>
-                <button 
-                  disabled={isProcessing} 
-                  onClick={() => onBulkAction('Diverifikasi')} 
-                  className="px-3 py-2 bg-blue-600 text-white rounded-lg font-black text-[10px] shadow-sm hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-1 disabled:opacity-50"
-                >
-                  <Filter size={14}/> VERIFIKASI
-                </button>
-                <button 
-                  disabled={isProcessing} 
-                  onClick={() => onBulkAction('Ditolak Operator')} 
-                  className="px-3 py-2 bg-rose-600 text-white rounded-lg font-black text-[10px] shadow-sm hover:bg-rose-700 active:scale-95 transition-all flex items-center gap-1 disabled:opacity-50"
-                >
-                  <Filter size={14}/> TOLAK
-                </button>
-              </>
-            )}
-            
-            {currentUserLevel === 'Admin' && (
-              <>
-                <button 
-                  disabled={isProcessing} 
-                  onClick={() => onBulkAction('Disetujui')} 
-                  className="px-3 py-2 bg-emerald-600 text-white rounded-lg font-black text-[10px] shadow-sm hover:bg-emerald-700 active:scale-95 transition-all flex items-center gap-1 disabled:opacity-50"
-                >
-                  <Filter size={14}/> SETUJUI FINAL
-                </button>
-                <button 
-                  disabled={isProcessing} 
-                  onClick={() => onBulkAction('Ditolak Admin')} 
-                  className="px-3 py-2 bg-rose-600 text-white rounded-lg font-black text-[10px] shadow-sm hover:bg-rose-700 active:scale-95 transition-all flex items-center gap-1 disabled:opacity-50"
-                >
-                  <Filter size={14}/> TOLAK
-                </button>
-              </>
-            )}
+        {/* Title Section (Parallax Hover) */}
+        <div className="transform transition-transform duration-500 group-hover/filterbar:translate-x-1 shrink-0">
+          <h2 className={`text-2xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-[#425c5a]'}`}>
+            Database Usulan
+          </h2>
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#d7a217] shadow-[0_0_8px_#d7a217] animate-pulse"></span>
+            <p className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-[#cadfdf]/80' : 'text-[#3c5654]/80'}`}>
+              Otoritas: <span className="text-[#d7a217]">{currentUserLevel}</span>
+            </p>
           </div>
-        )}
-
-        {/* Filter Tahap */}
-        <select 
-          value={selectedTahap} 
-          onChange={e => {
-            setSelectedTahap(e.target.value);
-          }} 
-          className="p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 font-bold text-blue-600 dark:text-blue-400 shadow-sm outline-none transition-colors"
-        >
-          <option value="Semua">Semua Tahap</option>
-          {tahapList && tahapList.length > 0 ? (
-            tahapList.map(t => (
-              <option key={t.id} value={t.nama}>{String(t.nama || "")}</option>
-            ))
-          ) : null}
-        </select>
-
-        {/* Filter Tahun */}
-        <select 
-          value={selectedYear} 
-          onChange={e => {
-            setSelectedYear(e.target.value);
-          }} 
-          className="p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 shadow-sm outline-none transition-colors"
-        >
-          <option value="Semua">Semua Tahun</option>
-          {tahunList && tahunList.length > 0 ? (
-            tahunList.map(t => (
-              <option key={t.id} value={t.tahun || t.nama}>
-                {t.tahun || t.nama}
-              </option>
-            ))
-          ) : (
-            <>
-              <option value="2024">2024</option>
-              <option value="2025">2025</option>
-              <option value="2026">2026</option>
-            </>
-          )}
-        </select>
-
-        {/* Search Input */}
-        <div className="relative group flex-grow md:w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Cari SKPD/No Surat..." 
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-            }} 
-            className="pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs w-full outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm transition-colors" 
-          />
         </div>
+        
+        {/* Control Area */}
+        <div className="flex flex-col lg:flex-row items-center gap-4 w-full xl:w-auto">
+          
+          {/* Main Filters (Glassmorphism) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 w-full lg:w-auto">
+            
+            {/* Search */}
+            <div className="relative group/input">
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#3c5654]/50 dark:text-[#cadfdf]/50 group-focus-within/input:text-[#d7a217] transition-colors duration-300" />
+              <input 
+                type="text" 
+                value={searchTerm} 
+                onChange={e => setSearchTerm(e.target.value)} 
+                placeholder="Cari Instansi / Nomor..." 
+                className={`${glassInput} w-full pl-9 pr-3.5 py-3 text-xs font-medium shadow-inner`} 
+              />
+            </div>
+            
+            {/* Filter Status */}
+            <div className="relative group/input">
+              <Filter size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#3c5654]/50 dark:text-[#cadfdf]/50 group-focus-within/input:text-[#d7a217] transition-colors duration-300" />
+              <select 
+                value={statusFilter} 
+                onChange={e => setStatusFilter(e.target.value)} 
+                className={`${glassInput} w-full pl-9 pr-3.5 py-3 text-xs font-bold uppercase tracking-wider appearance-none cursor-pointer shadow-inner`}
+              >
+                <option value="Semua" className="bg-white dark:bg-[#425c5a] text-[#425c5a] dark:text-white">Semua Status</option>
+                <option value="Pending" className="bg-white dark:bg-[#425c5a] text-amber-600 dark:text-amber-400">Pending</option>
+                <option value="Diverifikasi" className="bg-white dark:bg-[#425c5a] text-indigo-600 dark:text-indigo-400">Diverifikasi</option>
+                <option value="Disetujui" className="bg-white dark:bg-[#425c5a] text-emerald-600 dark:text-emerald-400">Disetujui</option>
+                <option value="Ditolak" className="bg-white dark:bg-[#425c5a] text-rose-600 dark:text-rose-400">Ditolak</option>
+              </select>
+            </div>
+            
+            {/* Filter Tahap */}
+            <div className="relative group/input">
+              <Layers size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#3c5654]/50 dark:text-[#cadfdf]/50 group-focus-within/input:text-[#d7a217] transition-colors duration-300" />
+              <select 
+                value={selectedTahap} 
+                onChange={e => setSelectedTahap(e.target.value)} 
+                className={`${glassInput} w-full pl-9 pr-3.5 py-3 text-xs font-bold uppercase tracking-wider appearance-none cursor-pointer shadow-inner`}
+              >
+                <option value="Semua" className="bg-white dark:bg-[#425c5a] text-[#425c5a] dark:text-white">Semua Tahap</option>
+                {tahapList?.map(t => <option key={t.id} value={t.nama} className="bg-white dark:bg-[#425c5a] text-[#425c5a] dark:text-white">{t.nama}</option>)}
+              </select>
+            </div>
+            
+            {/* Filter Tahun */}
+            <div className="relative group/input">
+              <CalendarDays size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#3c5654]/50 dark:text-[#cadfdf]/50 group-focus-within/input:text-[#d7a217] transition-colors duration-300" />
+              <select 
+                value={selectedYear} 
+                onChange={e => setSelectedYear(e.target.value)} 
+                className={`${glassInput} w-full pl-9 pr-3.5 py-3 text-xs font-bold uppercase tracking-wider appearance-none cursor-pointer shadow-inner`}
+              >
+                <option value="Semua" className="bg-white dark:bg-[#425c5a] text-[#425c5a] dark:text-white">Semua Tahun</option>
+                {tahunList?.map(t => <option key={t.id} value={t.tahun} className="bg-white dark:bg-[#425c5a] text-[#425c5a] dark:text-white">{t.tahun}</option>)}
+              </select>
+            </div>
+          </div>
 
-        {/* Status Filter */}
-        <select 
-          value={statusFilter} 
-          onChange={e => {
-            setStatusFilter(e.target.value);
-          }} 
-          className="p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300 shadow-sm outline-none transition-colors"
-        >
-          <option value="Semua">Semua Status</option>
-          <option value="Pending">Pending (Verifikasi)</option>
-          <option value="Diverifikasi">Diverifikasi (Setuju Admin)</option>
-          <option value="Disetujui">Disetujui Final</option>
-          <option value="Ditolak">Ditolak</option>
-        </select>
+          {/* Action Buttons Container */}
+          <div className={`flex flex-wrap lg:flex-nowrap items-center gap-3 w-full lg:w-auto pl-0 lg:pl-4 border-t lg:border-t-0 lg:border-l pt-4 lg:pt-0 ${isDarkMode ? 'border-[#cadfdf]/20' : 'border-[#cadfdf]/60'}`}>
+            
+            {/* BULK ACTION BUTTONS (Show only if selected and authorized) */}
+            {selectedForBulk?.length > 0 && ['Admin', 'Operator BKAD'].includes(currentUserLevel) && (
+              <div className="flex items-center gap-2 bg-[#d7a217]/10 p-1.5 rounded-xl border border-[#d7a217]/30 shadow-inner animate-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center gap-1.5 px-3">
+                  <CheckSquare size={12} className="text-[#d7a217]" />
+                  <span className="text-[10px] font-black text-[#d7a217] uppercase tracking-widest">{selectedForBulk.length} Data</span>
+                </div>
+                
+                {currentUserLevel === 'Operator BKAD' && (
+                  <>
+                    <button 
+                      disabled={isProcessing} 
+                      onClick={() => onBulkAction('Diverifikasi')} 
+                      className="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 disabled:opacity-50 shadow-md"
+                    >
+                      VERIF
+                    </button>
+                    <button 
+                      disabled={isProcessing} 
+                      onClick={() => onBulkAction('Ditolak Operator')} 
+                      className="px-4 py-2 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 disabled:opacity-50 shadow-md"
+                    >
+                      TOLAK
+                    </button>
+                  </>
+                )}
+                
+                {currentUserLevel === 'Admin' && (
+                  <>
+                    <button 
+                      disabled={isProcessing} 
+                      onClick={() => onBulkAction('Disetujui')} 
+                      className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 disabled:opacity-50 shadow-md"
+                    >
+                      SETUJUI
+                    </button>
+                    <button 
+                      disabled={isProcessing} 
+                      onClick={() => onBulkAction('Ditolak Admin')} 
+                      className="px-4 py-2 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 disabled:opacity-50 shadow-md"
+                    >
+                      TOLAK
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
 
-        {/* Export Button */}
-        <button 
-          onClick={onExportCSV} 
-          className="p-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400" 
-          title="Ekspor Excel"
-        >
-          <FileSpreadsheet size={18}/> EXCEL
-        </button>
-
-        {/* Add New Button */}
-        {['SKPD', 'Admin', 'Operator BKAD'].includes(currentUserLevel) && (
-          <button 
-            onClick={onAddNew} 
-            className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-black text-xs shadow-lg hover:bg-blue-700 active:scale-95 transition-all"
-          >
-            TAMBAH USULAN
-          </button>
-        )}
+            {/* General Action Buttons */}
+            <div className="flex gap-2 w-full sm:w-auto ml-auto">
+              <button 
+                onClick={onExportCSV} 
+                className={`flex-1 sm:flex-none px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 shadow-sm border ${
+                  isDarkMode 
+                    ? 'bg-black/30 border-[#cadfdf]/20 text-[#cadfdf] hover:bg-black/50 hover:border-[#d7a217]/50 hover:text-[#d7a217]' 
+                    : 'bg-white/80 border-[#cadfdf]/60 text-[#425c5a] hover:bg-white hover:border-[#d7a217]/50 hover:text-[#d7a217]'
+                }`}
+              >
+                <Download size={14}/> EXPORT
+              </button>
+              
+              {['SKPD', 'Admin', 'Operator BKAD'].includes(currentUserLevel) && (
+                <button 
+                  onClick={onAddNew} 
+                  className="flex-1 sm:flex-none px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_15px_rgba(215,162,23,0.4)] shadow-lg shadow-[#d7a217]/20 bg-gradient-to-br from-[#d7a217] to-[#c29115] text-white"
+                >
+                  <Plus size={16}/> BUAT USULAN
+                </button>
+              )}
+            </div>
+            
+          </div>
+        </div>
       </div>
+
+      <style jsx>{`
+        @keyframes float-filter {
+          0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+          20% { opacity: var(--opacity, 0.4); }
+          80% { opacity: var(--opacity, 0.4); }
+          100% { transform: translateY(-50px) translateX(20px) scale(0.8); opacity: 0; }
+        }
+        .animate-float-filter {
+          animation-name: float-filter;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+        }
+      `}</style>
     </div>
   );
 };
