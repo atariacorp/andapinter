@@ -202,26 +202,6 @@ const LoginScreen = ({
       {/* Floating Gold Particles */}
       <FloatingGoldParticles />
 
-      {/* --- NOTIFICATIONS --- */}
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[500] flex flex-col items-center gap-3 w-full max-w-sm pointer-events-none">
-        {(notifications || []).map(n => (
-          <div 
-            key={n.id} 
-            className={`pointer-events-auto flex items-center gap-3 p-4 rounded-2xl shadow-xl backdrop-blur-xl animate-in slide-in-from-top-4 fade-in w-full border ${
-              n.type === 'success' 
-                ? 'bg-emerald-500/90 text-white border-emerald-400/50' 
-                : 'bg-rose-500/90 text-white border-rose-400/50'
-            }`}
-          >
-            {n.type === 'success' ? <CheckCircle size={20} className="shrink-0" /> : <AlertTriangle size={20} className="shrink-0" />}
-            <p className="text-[13px] font-semibold leading-snug flex-1">{String(n.message || "")}</p>
-            <button onClick={() => removeNotification(n.id)} className="opacity-70 hover:opacity-100 transition-opacity">
-              <X size={16}/>
-            </button>
-          </div>
-        ))}
-      </div>
-
       {/* --- MAIN LOGIN CARD --- */}
       <div 
         className="w-full max-w-[420px] relative z-10 animate-in zoom-in-95 duration-700"

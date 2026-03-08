@@ -85,6 +85,32 @@ const ProposalDetailView = ({
     gold: '#d7a217'
   };
 
+    // ===== HANDLE ADD COMMENT - TARUH DI SINI =====
+  const handleAddCommentLocal = async (id, comment) => {
+    if (!id || !comment || !comment.text.trim()) return;
+    
+    setIsProcessing(true);
+    try {
+      // Panggil fungsi dari props (dari parent)
+      await handleAddComment(id, comment);
+      
+      // Update local state untuk memastikan UI refresh
+      const updatedComments = [...(selectedProposal.comments || []), comment];
+      setSelectedProposal(prev => ({
+        ...prev,
+        comments: updatedComments
+      }));
+      
+      addNotification("Pesan terkirim", "success");
+    } catch (err) {
+      console.error(err);
+      addNotification("Gagal mengirim pesan", "error");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  // ===== AKHIR HANDLE ADD COMMENT =====
+  
   // Update selected proposal when data changes
   useEffect(() => {
     const updated = proposals.proposals.find(p => p.id === selectedProposal?.id);
@@ -520,18 +546,41 @@ const ProposalDetailView = ({
         </div>
 
         {/* Kolom Kanan - Interaksi & Log */}
-        <div className="space-y-6">
-          {/* Chat Panel */}
-          <div className={`${glassCard} overflow-hidden h-[500px] flex flex-col group hover:-translate-y-1`}>
-            {/* ... konten chat ... */}
-          </div>
+<div className="space-y-6">
+  {/* Chat Panel dengan Auto-scroll dan Real-time Update */}
+  <div className={`${glassCard} overflow-hidden h-[500px] flex flex-col group hover:-translate-y-1 transition-all duration-300`}>
+  <ChatPanel
+    comments={selectedProposal.comments || []}
+    currentUser={currentUserProfile}
+    onSendComment={(e) => {
+      e.preventDefault();
+      if (commentText.trim()) {
+        handleAddCommentLocal(selectedProposal.id, {
+          text: commentText.trim(),
+          sender: currentUserProfile.nama,
+          role: currentUserProfile.level,
+          timestamp: new Date().toISOString()
+        });
+        setCommentText(''); // Kosongkan input setelah kirim
+      }
+    }}
+    commentText={commentText}
+    setCommentText={setCommentText}
+    disabled={isTapd}
+    isDarkMode={isDarkMode}
+    colors={colors}
+  />
+</div>
 
-          {/* History Timeline */}
-          <div className={`${glassCard} overflow-hidden group hover:-translate-y-1`}>
-            {/* ... konten history ... */}
-          </div>
-        </div>
-      </div>
+  {/* History Timeline */}
+  <div className={`${glassCard} overflow-hidden group hover:-translate-y-1 transition-all duration-300`}>
+    <HistoryTimeline 
+      history={selectedProposal.history || []} 
+      isDarkMode={isDarkMode}
+      colors={colors}
+    />
+  </div>
+</div>
 
       {/* Modal History Versi */}
       {showVersionHistory && (
@@ -543,6 +592,7 @@ const ProposalDetailView = ({
           colors={colors}
         />
       )}
+ </div>
 
       {/* Styles */}
       <style jsx>{`

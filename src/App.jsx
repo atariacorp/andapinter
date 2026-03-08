@@ -7,6 +7,10 @@ import LoginScreen from './components/auth/LoginScreen';
 import MainLayout from './components/layout/MainLayout';
 import DeleteConfirmModal from './components/common/DeleteConfirmModal';
 import { IS_CANVAS, storage } from './utils';
+import ToastPortal from './components/common/ToastPortal';  
+
+// Import Icons untuk UI Notifikasi Global
+import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 
 const AppContent = () => {
   const { user, authInitialized, login, logout, loading: authLoading } = useAuth();
@@ -28,50 +32,50 @@ const AppContent = () => {
   // ===== AKHIR TAMBAHAN =====
   
   // ===== FUNGSI UNTUK ACTIVITY LOGS =====
-const addActivityLog = async ({ action, category, description, dataId = null, oldData = null, newData = null }) => {
-  if (!user) return;
-  
-  try {
-    const logData = {
-      action,
-      category,
-      description,
-      userId: user.uid,
-      userName: currentUserProfile.nama || user.email || 'Unknown',
-      userLevel: currentUserProfile.level || 'Viewer',
-      timestamp: new Date().toISOString(),
-      dataId,
-      oldData: oldData ? JSON.stringify(oldData) : null,
-      newData: newData ? JSON.stringify(newData) : null
-    };
+  const addActivityLog = async ({ action, category, description, dataId = null, oldData = null, newData = null }) => {
+    if (!user) return;
     
-    // Simulasi dulu tanpa Firestore
-    console.log('📝 Activity Log:', logData);
-    
-    // Tambahkan ke state lokal
-    setActivityLogs(prev => [logData, ...prev].slice(0, 100)); // Simpan 100 log terbaru
-    
-    // Nanti bisa ditambahkan ke Firestore
-    // await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'activity_logs'), logData);
-    
-  } catch (err) {
-    console.error("Gagal mencatat log:", err);
-  }
-};
+    try {
+      const logData = {
+        action,
+        category,
+        description,
+        userId: user.uid,
+        userName: currentUserProfile.nama || user.email || 'Unknown',
+        userLevel: currentUserProfile.level || 'Viewer',
+        timestamp: new Date().toISOString(),
+        dataId,
+        oldData: oldData ? JSON.stringify(oldData) : null,
+        newData: newData ? JSON.stringify(newData) : null
+      };
+      
+      // Simulasi dulu tanpa Firestore
+      console.log('📝 Activity Log:', logData);
+      
+      // Tambahkan ke state lokal
+      setActivityLogs(prev => [logData, ...prev].slice(0, 100)); // Simpan 100 log terbaru
+      
+      // Nanti bisa ditambahkan ke Firestore
+      // await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'activity_logs'), logData);
+      
+    } catch (err) {
+      console.error("Gagal mencatat log:", err);
+    }
+  };
 
-const refreshLogs = async () => {
-  setLoadingLogs(true);
-  try {
-    // Simulasi refresh
-    console.log('Refreshing logs...');
-    // Nanti bisa diisi dengan fetch dari Firestore
-    setLoadingLogs(false);
-  } catch (err) {
-    console.error('Error refreshing logs:', err);
-    setLoadingLogs(false);
-  }
-};
-// ===== AKHIR FUNGSI LOGS =====
+  const refreshLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      // Simulasi refresh
+      console.log('Refreshing logs...');
+      // Nanti bisa diisi dengan fetch dari Firestore
+      setLoadingLogs(false);
+    } catch (err) {
+      console.error('Error refreshing logs:', err);
+      setLoadingLogs(false);
+    }
+  };
+  // ===== AKHIR FUNGSI LOGS =====
 
   // Load master data
   const masterData = useMasterData(user);
@@ -123,6 +127,15 @@ const refreshLogs = async () => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
+  // ===== DEBUG FUNCTION (TAMBAHKAN INI) =====
+  useEffect(() => {
+    // Buat fungsi global untuk testing dari console
+    window.testNotification = (message = 'Test notifikasi', type = 'success') => {
+      addNotification(message, type);
+    };
+    console.log('✅ Debug: testNotification tersedia di console!');
+  }, [addNotification]); // <-- addNotification sebagai dependency
+  
   const handleLogin = async (email, password, isRegister) => {
     try {
       if (isRegister) {
@@ -194,48 +207,55 @@ const refreshLogs = async () => {
 
   if (!user) {
     return (
-      <LoginScreen
-        onLogin={handleLogin}
-        isLoggingIn={authLoading}
-        notifications={notifications}
-        removeNotification={removeNotification}
-        branding={branding}
-        isDarkMode={isDarkMode}
-        toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-      />
+      <>
+        <LoginScreen
+          onLogin={handleLogin}
+          isLoggingIn={authLoading}
+          notifications={notifications}
+          removeNotification={removeNotification}
+          branding={branding}
+          isDarkMode={isDarkMode}
+          toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+        />
+        
+        {/* Render Notifikasi Global saat di halaman Login */}
+        <GlobalToastNotifications 
+          notifications={notifications} 
+          removeNotification={removeNotification} 
+          isDarkMode={isDarkMode} 
+        />
+      </>
     );
   }
 
   // ===== FUNGSI STORAGE =====
-const checkStorageUsage = async () => {
-  // Implementasi check storage
-  console.log('Checking storage usage...');
-  // Sementara return dummy dulu
-  return {
-    used: '0 MB',
-    total: '5 GB',
-    percentage: 0,
-    files: 0,
-    folders: {}
+  const checkStorageUsage = async () => {
+    // Implementasi check storage
+    console.log('Checking storage usage...');
+    // Sementara return dummy dulu
+    return {
+      used: '0 MB',
+      total: '5 GB',
+      percentage: 0,
+      files: 0,
+      folders: {}
+    };
   };
-};
 
-const backupAllFiles = async () => {
-  console.log('Backing up files...');
-  addNotification('Fitur backup dalam pengembangan', 'info');
-};
+  const backupAllFiles = async () => {
+    console.log('Backing up files...');
+    addNotification('Fitur backup dalam pengembangan', 'info');
+  };
 
-const restoreFromBackup = async (file, onProgress) => {
-  console.log('Restoring from backup...', file);
-  addNotification('Fitur restore dalam pengembangan', 'info');
-};
+  const restoreFromBackup = async (file, onProgress) => {
+    console.log('Restoring from backup...', file);
+    addNotification('Fitur restore dalam pengembangan', 'info');
+  };
 
-const cleanupOrphanFiles = async () => {
-  console.log('Cleaning up orphan files...');
-  addNotification('Fitur cleanup dalam pengembangan', 'info');
-};
-
-// Kirim ke MainLayout
+  const cleanupOrphanFiles = async () => {
+    console.log('Cleaning up orphan files...');
+    addNotification('Fitur cleanup dalam pengembangan', 'info');
+  };
 
   return (
     <div className={`${isDarkMode ? 'dark' : ''} print:bg-white`}>
@@ -271,6 +291,124 @@ const cleanupOrphanFiles = async () => {
         onConfirm={executeDelete}
         onCancel={() => setDeleteConfirm({ show: false, id: null, name: '', type: 'SKPD' })}
       />
+
+      {/* ===== GLOBAL NOTIFICATION TOAST CONTAINER ===== */}
+      {/* Diposisikan di Top-Right (Kanan Atas) agar estetik dan tidak menumpuk dengan Sidebar */}
+      <GlobalToastNotifications 
+        notifications={notifications} 
+        removeNotification={removeNotification} 
+        isDarkMode={isDarkMode} 
+      />
+    </div>
+  );
+};
+
+
+// Sub-Komponen untuk merender Toast Notification
+const GlobalToastNotifications = ({ notifications, removeNotification, isDarkMode }) => {
+  if (!notifications || notifications.length === 0) return null;
+
+  return (
+    <div 
+      style={{
+        position: 'fixed',
+        top: '24px',
+        right: '24px',
+        zIndex: 99999,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        alignItems: 'flex-end',
+        pointerEvents: 'none',
+        maxWidth: '400px',
+        width: '100%'
+      }}
+    >
+      {notifications.map((notif) => {
+        // Styling Dinamis berdasarkan Tipe Notifikasi
+        let Icon = Info;
+        let bgColor = isDarkMode ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)';
+        let borderColor = isDarkMode ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)';
+        let iconColor = isDarkMode ? '#60a5fa' : '#2563eb';
+
+        if (notif.type === 'success') {
+          Icon = CheckCircle;
+          bgColor = isDarkMode ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)';
+          borderColor = isDarkMode ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.2)';
+          iconColor = isDarkMode ? '#34d399' : '#059669';
+        } else if (notif.type === 'error') {
+          Icon = AlertCircle;
+          bgColor = isDarkMode ? 'rgba(244, 63, 94, 0.2)' : 'rgba(244, 63, 94, 0.1)';
+          borderColor = isDarkMode ? 'rgba(244, 63, 94, 0.3)' : 'rgba(244, 63, 94, 0.2)';
+          iconColor = isDarkMode ? '#f87171' : '#dc2626';
+        }
+
+        return (
+          <div
+            key={notif.id}
+            style={{
+              pointerEvents: 'auto',
+              width: '100%',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '16px',
+              padding: '16px',
+              borderRadius: '16px',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              backgroundColor: bgColor,
+              border: `1px solid ${borderColor}`,
+              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
+              animation: 'slideInFromRight 0.3s ease-out forwards',
+              transform: 'translateX(100%)',
+              opacity: 0
+            }}
+            onAnimationEnd={(e) => {
+              e.currentTarget.style.transform = 'translateX(0)';
+              e.currentTarget.style.opacity = '1';
+            }}
+          >
+            <div style={{ color: iconColor, marginTop: '2px' }}>
+              <Icon size={22} />
+            </div>
+            <p style={{
+              flex: 1,
+              fontSize: '14px',
+              fontWeight: 500,
+              lineHeight: '1.5',
+              color: isDarkMode ? '#fff' : '#1e293b',
+              margin: 0
+            }}>
+              {notif.message}
+            </p>
+            <button
+              onClick={() => removeNotification(notif.id)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                padding: '4px',
+                borderRadius: '6px',
+                color: isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+                e.currentTarget.style.color = isDarkMode ? '#fff' : '#000';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)';
+              }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 };
