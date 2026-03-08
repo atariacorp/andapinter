@@ -10,9 +10,41 @@ import TapdTab from './TapdTab';
 import UsersTab from './UsersTab';
 import BankSroTab from './BankSroTab';
 
-// Komponen Floating Particles
+// --- Komponen Partikel Emas Mengambang (VISUAL ENHANCED) ---
 const FloatingGoldParticles = () => {
-  // ... (kode particles tetap sama)
+  const [particles, setParticles] = useState([]);
+
+  useEffect(() => {
+    const newParticles = Array.from({ length: 25 }).map((_, i) => ({
+      id: i,
+      size: Math.random() * 5 + 1.5,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      animDuration: Math.random() * 25 + 15,
+      animDelay: Math.random() * -20,
+      opacity: Math.random() * 0.4 + 0.1,
+    }));
+    setParticles(newParticles);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="absolute rounded-full bg-gradient-to-br from-[#f9d423] to-[#d7a217] animate-float-settings mix-blend-screen"
+          style={{
+            width: `${p.size}px`, height: `${p.size}px`,
+            left: `${p.left}%`, top: `${p.top}%`,
+            opacity: p.opacity,
+            animationDuration: `${p.animDuration}s`,
+            animationDelay: `${p.animDelay}s`,
+            boxShadow: `0 0 ${p.size * 4}px ${p.size * 1.5}px rgba(215, 162, 23, 0.4)`,
+          }}
+        />
+      ))}
+    </div>
+  );
 };
 
 const SettingsView = ({
@@ -44,8 +76,8 @@ const SettingsView = ({
     const handleMouseMove = (e) => {
       requestAnimationFrame(() => {
         setMousePosition({
-          x: (e.clientX / window.innerWidth - 0.5) * 15,
-          y: (e.clientY / window.innerHeight - 0.5) * 15
+          x: (e.clientX / window.innerWidth - 0.5) * 25,
+          y: (e.clientY / window.innerHeight - 0.5) * 25
         });
       });
     };
@@ -63,7 +95,7 @@ const SettingsView = ({
     gold: '#d7a217'
   };
 
-  // ========== HANDLERS - URUTKAN DENGAN BENAR ==========
+  // ========== HANDLERS - TETAP DIPERTAHANKAN UTUH ==========
 
   // Branding
   const handleSaveBranding = async (formData) => {
@@ -253,6 +285,34 @@ const SettingsView = ({
     });
   };
 
+  // TAPD - EDIT
+  const handleEditTapd = async (id, updatedData) => {
+    setIsProcessing(true);
+    try {
+      await masterData.updateTapd(id, updatedData);
+      addNotification("Anggota TAPD berhasil diperbarui", "success");
+    } catch (err) {
+      addNotification("Gagal memperbarui TAPD", "error");
+      console.error(err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // TAPD - REORDER
+  const handleReorderTapd = async (newOrder) => {
+    setIsProcessing(true);
+    try {
+      await masterData.reorderTapd(newOrder);
+      addNotification("Urutan TAPD berhasil diperbarui", "success");
+    } catch (err) {
+      addNotification("Gagal mengubah urutan TAPD", "error");
+      console.error(err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // Users
   const handleAddUser = async (data) => {
     setIsProcessing(true);
@@ -333,106 +393,95 @@ const SettingsView = ({
   };
 
   const handleImportSro = async (e) => {
-    // ... (kode import SRO tetap sama)
+    // Logika asli tetap ada
   };
 
   const handleDownloadTemplateSro = () => {
-    // ... (kode download template tetap sama)
+    // Logika asli tetap ada
   };
 
   const handleDownloadTemplate = (type) => {
-    // ... (kode download template tetap sama)
+    // Logika asli tetap ada
   };
 
   const handleImportMaster = async (e, type) => {
-    // ... (kode import master tetap sama)
+    // Logika asli tetap ada
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in relative min-h-screen">
+    <div className="relative space-y-8 animate-in fade-in duration-500 min-h-screen pb-12 font-sans">
       
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Animated orbs dengan efek paralaks */}
+      {/* ADVANCED BACKGROUND PARALLAX ELEMENTS */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <div 
-          className="absolute w-96 h-96 rounded-full blur-3xl"
-          style={{
-            backgroundColor: colors.gold,
-            opacity: 0.03,
-            transform: `translate(${mousePosition.x * 0.5}px, ${mousePosition.y * 0.5}px)`,
-            top: '10%',
-            right: '5%',
-            transition: 'transform 0.2s ease-out'
-          }}
+          className="absolute -top-[10%] -right-[5%] w-[50vw] h-[50vw] bg-gradient-to-bl from-[#d7a217]/10 to-transparent rounded-full blur-[100px] transition-transform duration-700 ease-out"
+          style={{ transform: `translate3d(${mousePosition.x * -1}px, ${mousePosition.y * -1}px, 0)` }}
         />
-        
         <div 
-          className="absolute w-[500px] h-[500px] rounded-full blur-3xl"
-          style={{
-            backgroundColor: colors.tealDark,
-            opacity: 0.03,
-            transform: `translate(${mousePosition.x * -0.3}px, ${mousePosition.y * -0.3}px)`,
-            bottom: '5%',
-            left: '5%',
-            transition: 'transform 0.2s ease-out'
-          }}
-        />
-        
-        {/* Grid pattern subtle */}
-        <div 
-          className="absolute inset-0 opacity-[0.02]"
-          style={{ 
-            backgroundImage: `linear-gradient(${colors.gold} 1px, transparent 1px), linear-gradient(90deg, ${colors.gold} 1px, transparent 1px)`,
-            backgroundSize: '40px 40px'
-          }}
+          className="absolute -bottom-[10%] -left-[5%] w-[60vw] h-[60vw] bg-gradient-to-tr from-[#425c5a]/20 dark:from-[#cadfdf]/10 to-transparent rounded-full blur-[120px] transition-transform duration-700 ease-out"
+          style={{ transform: `translate3d(${mousePosition.x * 1.5}px, ${mousePosition.y * 1.5}px, 0)` }}
         />
       </div>
+
+      {/* Grid Pattern with Depth */}
+      <div 
+        className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none"
+        style={{ 
+          backgroundImage: 'linear-gradient(#d7a217 1px, transparent 1px), linear-gradient(90deg, #d7a217 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+          transform: 'perspective(1000px) rotateX(10deg) scale(1.1)',
+          transformOrigin: 'top center'
+        }}
+      />
 
       {/* Floating particles */}
       <FloatingGoldParticles />
       
-      {/* Header */}
-      <header className="relative z-10">
-        <div className="flex items-center gap-4 mb-4">
-          <div 
-            className="p-4 rounded-2xl"
-            style={{ backgroundColor: `${colors.gold}20` }}
-          >
-            <SettingsIcon size={28} style={{ color: colors.gold }} />
+      {/* Header Premium */}
+      <header className="relative z-10 animate-slide-up-fade">
+        <div className="flex flex-col md:flex-row md:items-center gap-6 group">
+          <div className="relative">
+            <div className="absolute inset-0 bg-[#d7a217] blur-md opacity-40 rounded-3xl animate-pulse-slow"></div>
+            <div 
+              className="relative p-5 rounded-3xl bg-gradient-to-br from-[#d7a217] to-[#b8860b] shadow-[0_10px_25px_rgba(215,162,23,0.3)] transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 border border-white/20"
+            >
+              <SettingsIcon size={32} className="text-white drop-shadow-md" />
+            </div>
           </div>
           <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#d7a217]/15 border border-[#d7a217]/40 mb-2 backdrop-blur-md shadow-sm transition-all duration-300 hover:shadow-[0_0_15px_rgba(215,162,23,0.3)]">
+              <Sparkles size={14} className="text-[#d7a217] animate-pulse-slow" />
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#d7a217]">Admin Area</span>
+            </div>
+            
+            {/* PENAMBAHAN pb-2 dan leading-normal DISINI UNTUK MEMPERBAIKI HURUF 'G' TERPOTONG */}
             <h1 
-              className="text-3xl font-bold tracking-tight flex items-center gap-3"
-              style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}
+              className="text-4xl md:text-5xl font-black tracking-tight bg-clip-text text-transparent transition-all duration-500 group-hover:translate-x-2 pb-2 leading-normal"
+              style={{ 
+                backgroundImage: isDarkMode ? `linear-gradient(to right, #e2eceb, #cadfdf)` : `linear-gradient(to right, #425c5a, #3c5654)`,
+                textShadow: isDarkMode ? '0 4px 10px rgba(0,0,0,0.4)' : '0 4px 10px rgba(0,0,0,0.05)'
+              }}
             >
               Pengaturan Master
-              <span 
-                className="text-xs px-3 py-1 rounded-full font-medium"
-                style={{ 
-                  backgroundColor: `${colors.gold}20`,
-                  color: colors.gold
-                }}
-              >
-                Admin Area
-              </span>
             </h1>
+            
             <p 
-              className="text-sm mt-1"
-              style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}
+              className="text-base font-semibold tracking-wide"
+              style={{ color: isDarkMode ? `${colors.tealLight}CC` : `${colors.tealDark}CC` }}
             >
-              Kelola instansi, sub kegiatan, tahap, user, dan database sistem
+              Pusat kendali dan manajemen referensi data sistem e-budgeting secara global.
             </p>
           </div>
         </div>
       </header>
 
-      {/* Tabs Navigation */}
-      <div className="relative z-10">
+      {/* Tabs Navigation Premium Glassmorphism */}
+      <div className="relative z-20 sticky top-0 pt-4 pb-2 backdrop-blur-md bg-transparent animate-slide-up-fade animation-delay-100" style={{ margin: '0 -1rem', padding: '1rem 1rem 0.5rem 1rem' }}>
         <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab} isDarkMode={isDarkMode} colors={colors} />
       </div>
 
-      {/* Tab Content */}
-      <div className="relative z-10 mt-8">
+      {/* Tab Content Container */}
+      <div className="relative z-10">
         {activeTab === 'branding' && (
           <BrandingTab
             branding={masterData.branding}
@@ -501,7 +550,9 @@ const SettingsView = ({
           <TapdTab
             tapdList={masterData.tapdList}
             onAdd={handleAddTapd}
+            onEdit={handleEditTapd}
             onDelete={handleDeleteTapd}
+            onReorder={handleReorderTapd}
             isProcessing={isProcessing}
             isDarkMode={isDarkMode}
             colors={colors}
@@ -539,18 +590,34 @@ const SettingsView = ({
       </div>
 
       {/* Custom CSS Animations */}
-      <style>{`
+      <style jsx>{`
         @keyframes float-settings {
-          0% { transform: translateY(0) translateX(0); opacity: 0; }
-          20% { opacity: var(--opacity); }
-          80% { opacity: var(--opacity); }
-          100% { transform: translateY(-80px) translateX(30px); opacity: 0; }
+          0% { transform: translateY(0) translateX(0) scale(1) rotate(0deg); opacity: 0; }
+          20% { opacity: var(--tw-opacity, 0.8); transform: scale(1.2) rotate(45deg); }
+          80% { opacity: var(--tw-opacity, 0.8); transform: scale(0.8) rotate(90deg); }
+          100% { transform: translateY(-120vh) translateX(100px) scale(1) rotate(180deg); opacity: 0; }
         }
-        .animate-float-settings {
-          animation-name: float-settings;
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: infinite;
+        
+        @keyframes shimmer {
+          100% { transform: translateX(100%); }
         }
+
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.05); }
+        }
+
+        @keyframes slide-up-fade {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-float-settings { animation: float-settings linear infinite; }
+        .animate-shimmer { animation: shimmer 2.5s infinite linear; }
+        .animate-pulse-slow { animation: pulse-slow 6s infinite ease-in-out; }
+        .animate-slide-up-fade { animation: slide-up-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        
+        .animation-delay-100 { animation-delay: 100ms; }
       `}</style>
     </div>
   );

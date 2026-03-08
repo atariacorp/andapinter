@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useMasterData } from './hooks/useMasterData';
 import { useProposals } from './hooks/useProposals';
@@ -116,25 +116,31 @@ const AppContent = () => {
     }
   }, [user, masterData.usersList]);
 
-  // Notification functions
-  const addNotification = (message, type = 'success') => {
+  // ===== PERBAIKAN UTAMA: BUNGKUS FUNGSI NOTIFIKASI DENGAN useCallback =====
+  const addNotification = useCallback((message, type = 'success') => {
     const id = Date.now();
     setNotifications(prev => [...prev, { id, message: String(message), type }]);
     setTimeout(() => removeNotification(id), 5000);
-  };
+  }, []); // Empty array karena tidak bergantung pada props/state lain
 
-  const removeNotification = (id) => {
+  const removeNotification = useCallback((id) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
-  };
+  }, []);
+  // ===== AKHIR PERBAIKAN =====
 
-  // ===== DEBUG FUNCTION (TAMBAHKAN INI) =====
+  // ===== DEBUG FUNCTION (DIPERBAIKI) =====
   useEffect(() => {
     // Buat fungsi global untuk testing dari console
     window.testNotification = (message = 'Test notifikasi', type = 'success') => {
       addNotification(message, type);
     };
     console.log('✅ Debug: testNotification tersedia di console!');
-  }, [addNotification]); // <-- addNotification sebagai dependency
+    
+    // Cleanup function (membersihkan window property saat komponen unmount)
+    return () => {
+      delete window.testNotification;
+    };
+  }, [addNotification]); // addNotification sekarang stabil dengan useCallback
   
   const handleLogin = async (email, password, isRegister) => {
     try {

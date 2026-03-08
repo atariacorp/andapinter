@@ -1,16 +1,17 @@
 import React from 'react';
-import { Upload, FileCheck, Trash2, Download, X } from 'lucide-react';
+import { Upload, FileCheck, Trash2, Download, X, RefreshCw } from 'lucide-react';
 
 const FileUploader = ({ 
   file, 
   onUpload, 
   onRemove,
+  onCancel,
   uploading,
   uploadProgress,
   error,
   disabled,
   isDarkMode,
-  colors
+  colors 
 }) => {
   return (
     <div className="space-y-4">
@@ -44,10 +45,10 @@ const FileUploader = ({
                 className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-2"
                 style={{ borderColor: colors.gold }}
               ></div>
-              <p className="text-xs font-medium mb-2" style={{ color: colors.tealMedium }}>
+              <p className="text-xs font-medium mb-2" style={{ color: isDarkMode ? colors.tealLight : colors.tealMedium }}>
                 Mengupload... {Math.round(uploadProgress)}%
               </p>
-              <div className="w-full rounded-full h-2 overflow-hidden" style={{ backgroundColor: colors.tealPale }}>
+              <div className="w-full rounded-full h-2 overflow-hidden" style={{ backgroundColor: isDarkMode ? 'rgba(60,86,84,0.3)' : 'rgba(202,223,223,0.5)' }}>
                 <div 
                   className="h-2 rounded-full transition-all duration-300"
                   style={{ 
@@ -56,6 +57,18 @@ const FileUploader = ({
                   }}
                 ></div>
               </div>
+              
+              {/* Tombol Cancel Upload */}
+              {onCancel && (
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="mt-3 px-4 py-2 rounded-lg text-[9px] font-bold uppercase flex items-center gap-2 mx-auto transition-colors hover:bg-rose-500/20"
+                  style={{ color: '#ef4444' }}
+                >
+                  <X size={14} /> BATALKAN UPLOAD
+                </button>
+              )}
             </div>
           ) : file ? (
             // File sudah terupload
@@ -74,16 +87,16 @@ const FileUploader = ({
                    file.type?.startsWith('image/') ? '🖼️ GAMBAR' : 
                    '📎 FILE'}
                 </span>
-                <span className="text-[8px]" style={{ color: colors.tealMedium }}>
+                <span className="text-[8px]" style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}>
                   {(file.size / 1024).toFixed(1)} KB
                 </span>
               </div>
               
               <FileCheck size={32} className="mx-auto mb-2" style={{ color: colors.gold }} />
-              <p className="text-xs font-bold mb-1 truncate max-w-full" style={{ color: colors.tealDark }}>
+              <p className="text-xs font-bold mb-1 truncate max-w-full" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
                 {file.name}
               </p>
-              <p className="text-[9px] mb-3" style={{ color: colors.tealMedium }}>
+              <p className="text-[9px] mb-3" style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}>
                 {file.uploadedAt ? new Date(file.uploadedAt).toLocaleDateString('id-ID', {
                   day: 'numeric',
                   month: 'long',
@@ -98,7 +111,7 @@ const FileUploader = ({
                   className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 transition-all hover:scale-105"
                   style={{ 
                     backgroundColor: `${colors.tealDark}20`,
-                    color: colors.tealDark
+                    color: isDarkMode ? colors.tealLight : colors.tealDark
                   }}
                 >
                   <Download size={12} /> LIHAT
@@ -120,10 +133,10 @@ const FileUploader = ({
             // Belum ada file
             <>
               <Upload size={32} className="mx-auto mb-2" style={{ color: colors.gold }} />
-              <p className="text-xs font-bold mb-1" style={{ color: colors.tealDark }}>
+              <p className="text-xs font-bold mb-1" style={{ color: isDarkMode ? colors.tealLight : colors.tealDark }}>
                 Pilih File PDF / Gambar
               </p>
-              <p className="text-[9px]" style={{ color: colors.tealMedium }}>
+              <p className="text-[9px]" style={{ color: isDarkMode ? colors.tealPale : colors.tealMedium }}>
                 Maksimal 2MB • Format: PDF, JPG, PNG
               </p>
             </>
