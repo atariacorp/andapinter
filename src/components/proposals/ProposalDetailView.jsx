@@ -76,6 +76,10 @@ const ProposalDetailView = ({
   const [showBankCatatan, setShowBankCatatan] = useState(false);
   const [showVersionHistory, setShowVersionHistory] = useState(false);  
 
+  // Tambahkan variable yang diperlukan
+  const selectedYear = selectedProposal?.tahunAnggaran || new Date().getFullYear();
+  const tapdList = masterData?.tapdList || [];
+
   // Palet warna teal & gold
   const colors = {
     tealDark: '#425c5a',
@@ -85,7 +89,7 @@ const ProposalDetailView = ({
     gold: '#d7a217'
   };
 
-    // ===== HANDLE ADD COMMENT - TARUH DI SINI =====
+  // ===== HANDLE ADD COMMENT - TARUH DI SINI =====
   const handleAddCommentLocal = async (id, comment) => {
     if (!id || !comment || !comment.text.trim()) return;
     
@@ -102,6 +106,7 @@ const ProposalDetailView = ({
       }));
       
       addNotification("Pesan terkirim", "success");
+      setCommentText(''); // Kosongkan input setelah kirim
     } catch (err) {
       console.error(err);
       addNotification("Gagal mengirim pesan", "error");
@@ -118,7 +123,7 @@ const ProposalDetailView = ({
       setSelectedProposal(updated);
       setLocalCatatan(updated.hasilVerifikasi || '');
     }
-  }, [proposals.proposals, selectedProposal?.id]);
+  }, [proposals.proposals, selectedProposal?.id, setSelectedProposal, setLocalCatatan]);
 
   if (!selectedProposal) return null;
 
@@ -203,6 +208,163 @@ const ProposalDetailView = ({
       </div>
       <FloatingGoldParticles />
 
+      {/* PRINT AREA - BAGIAN INI YANG DITAMPILKAN SAAT CETAK */}
+      {selectedProposal && (
+        <div id="print-area" className="hidden print:block bg-white p-8 w-full text-slate-900 font-serif leading-relaxed">
+          
+          {/* KOP SURAT */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold uppercase tracking-wider">BERITA ACARA PERGESERAN ANGGARAN</h1>
+            <h2 className="text-xl font-semibold uppercase mt-1">PEMERINTAH KOTA MEDAN</h2>
+            <p className="text-sm mt-2">TAHUN ANGGARAN {selectedYear}</p>
+            <div className="w-32 h-0.5 bg-black mx-auto mt-4"></div>
+          </div>
+
+          {/* NOMOR DAN TANGGAL */}
+          <div className="flex justify-between text-sm mb-8">
+            <p><span className="font-bold">Nomor:</span> {selectedProposal.nomorSurat || '______________'}</p>
+            <p><span className="font-bold">Tanggal:</span> {selectedProposal.tanggalSurat || new Date().toLocaleDateString('id-ID')}</p>
+          </div>
+
+          {/* IDENTITAS */}
+          <div className="space-y-2 text-sm mb-8">
+            <p><span className="font-bold">SKPD/Instansi:</span> {selectedProposal.skpd || '______________'}</p>
+            <p><span className="font-bold">Sub Kegiatan:</span> {selectedProposal.subKegiatan || '______________'}</p>
+            <p><span className="font-bold">Tahap:</span> {selectedProposal.tahap || '______________'}</p>
+          </div>
+
+          {/* PEMBUKA */}
+          <p className="text-sm mb-6 text-justify">
+            Pada hari ini, {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}, 
+            bertempat di Kantor Badan Keuangan dan Aset Daerah Kota Medan, kami yang bertanda tangan di bawah ini telah mengadakan 
+            verifikasi dan persetujuan atas usulan pergeseran anggaran sebagai berikut:
+          </p>
+
+          {/* TABEL RINCIAN SRO */}
+          <h3 className="font-bold text-sm mb-3">Rincian Pergeseran Sub Rincian Objek (SRO)</h3>
+          <table className="w-full border border-black text-xs mb-8">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-black p-2">No</th>
+                <th className="border border-black p-2">Kode Rekening</th>
+                <th className="border border-black p-2">Uraian SRO</th>
+                <th className="border border-black p-2 text-right">Pagu Semula (Rp)</th>
+                <th className="border border-black p-2 text-right">Pagu Menjadi (Rp)</th>
+                <th className="border border-black p-2 text-right">Selisih (Rp)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(selectedProposal.rincian && selectedProposal.rincian.length > 0 
+                ? selectedProposal.rincian 
+                : [{ kodeRekening: '-', uraian: selectedProposal.subKegiatan, paguSebelum: 0, paguSesudah: 0 }]
+              ).map((r, index) => {
+                const selisih = (r.paguSesudah || 0) - (r.paguSebelum || 0);
+                return (
+                  <tr key={index}>
+                    <td className="border border-black p-2 text-center">{index + 1}</td>
+                    <td className="border border-black p-2">{r.kodeRekening || '-'}</td>
+                    <td className="border border-black p-2">{r.uraian || '-'}</td>
+                    <td className="border border-black p-2 text-right">{formatIDR(r.paguSebelum)}</td>
+                    <td className="border border-black p-2 text-right">{formatIDR(r.paguSesudah)}</td>
+                    <td className="border border-black p-2 text-right font-bold">{formatIDR(selisih)}</td>
+                  </tr>
+                );
+              })}
+              
+              {/* TOTAL ROW */}
+              <tr className="bg-gray-50 font-bold">
+                <td colSpan="3" className="border border-black p-2 text-right">TOTAL</td>
+                <td className="border border-black p-2 text-right">{formatIDR(selectedProposal.paguSebelum)}</td>
+                <td className="border border-black p-2 text-right">{formatIDR(selectedProposal.paguSesudah)}</td>
+                <td className="border border-black p-2 text-right">{formatIDR((selectedProposal.paguSesudah||0) - (selectedProposal.paguSebelum||0))}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* CATATAN VERIFIKASI */}
+          <div className="text-sm mb-8">
+            <p className="font-bold mb-2">Catatan Verifikasi:</p>
+            <p className="border border-black p-4 min-h-[80px]">
+              {selectedProposal.hasilVerifikasi || 'Telah dilakukan verifikasi dan dinyatakan sah untuk diproses lebih lanjut.'}
+            </p>
+          </div>
+
+          {/* PENUTUP */}
+          <p className="text-sm mb-12 text-justify">
+            Demikian Berita Acara ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.
+          </p>
+
+          {/* TANDA TANGAN - DENGAN NOMOR URUT */}
+          <div className="grid grid-cols-2 gap-x-16 gap-y-12 mt-16 text-sm">
+            
+            {/* Kolom Kiri - Pihak Pertama */}
+            <div>
+              <p className="font-bold mb-8">PIHAK PERTAMA,</p>
+              <p className="mb-2">Pejabat Pengelola Anggaran</p>
+              <div className="h-16"></div>
+              <p className="font-bold underline mt-8">_________________________</p>
+              <p>NIP. _________________</p>
+            </div>
+
+            {/* Kolom Kanan - Pihak Kedua */}
+            <div>
+              <p className="font-bold mb-8">PIHAK KEDUA,</p>
+              <p className="mb-2">Kepala SKPD/Instansi</p>
+              <div className="h-16"></div>
+              <p className="font-bold underline mt-8">_________________________</p>
+              <p>NIP. _________________</p>
+            </div>
+
+            {/* TAPD - DENGAN NOMOR URUT */}
+            <div className="col-span-2 mt-8">
+              <p className="font-bold mb-6 text-center">TIM ANGGARAN PEMERINTAH DAERAH (TAPD)</p>
+              <div className="grid grid-cols-3 gap-8">
+                {tapdList && tapdList.length > 0 ? (
+                  tapdList.map((t, index) => (
+                    <div key={t.id} className="text-center">
+                      <p className="font-bold mb-1">{index + 1}. {t.nama}</p>
+                      <p className="text-xs mb-8">{t.jabatan}</p>
+                      <div className="h-12"></div>
+                      <p className="font-bold underline mt-4">_________________________</p>
+                      <p className="text-xs">NIP. {t.nip}</p>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="text-center">
+                      <p className="font-bold mb-1">1. _________________</p>
+                      <p className="text-xs mb-8">Ketua TAPD</p>
+                      <div className="h-12"></div>
+                      <p className="font-bold underline mt-4">_________________________</p>
+                      <p className="text-xs">NIP. _________________</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold mb-1">2. _________________</p>
+                      <p className="text-xs mb-8">Sekretaris TAPD</p>
+                      <div className="h-12"></div>
+                      <p className="font-bold underline mt-4">_________________________</p>
+                      <p className="text-xs">NIP. _________________</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold mb-1">3. _________________</p>
+                      <p className="text-xs mb-8">Anggota TAPD</p>
+                      <div className="h-12"></div>
+                      <p className="font-bold underline mt-4">_________________________</p>
+                      <p className="text-xs">NIP. _________________</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* TANGGAL DAN TEMPAT */}
+          <div className="text-right mt-16 text-sm">
+            <p>Medan, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          </div>
+        </div>
+      )}
+      
       {/* --- HEADER --- */}
       <div className="flex flex-col md:flex-row md:items-center gap-6 relative z-10 p-6 rounded-3xl bg-gradient-to-br from-white/80 to-[#cadfdf]/30 dark:from-[#3c5654]/80 dark:to-[#425c5a]/80 backdrop-blur-md border border-white/50 dark:border-[#cadfdf]/20 shadow-lg">
         <div className="flex items-center gap-4">
@@ -339,7 +501,7 @@ const ProposalDetailView = ({
             <Printer size={18} /> CETAK BA
           </button>
         </div>
-      </div> {/* <-- Penting: Tutup div header */}
+      </div>
 
       {/* --- MAIN CONTENT GRID --- */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 relative z-10">
@@ -538,7 +700,28 @@ const ProposalDetailView = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#cadfdf]/40 dark:divide-[#cadfdf]/10">
-                  {/* ... isi tabel ... */}
+                  {(selectedProposal.rincian && selectedProposal.rincian.length > 0) ? (
+                    selectedProposal.rincian.map((item, index) => {
+                      const selisih = (item.paguSesudah || 0) - (item.paguSebelum || 0);
+                      return (
+                        <tr key={index} className="hover:bg-[#cadfdf]/20 dark:hover:bg-[#3c5654]/40 transition-colors">
+                          <td className="p-4 font-mono text-xs">{item.kodeRekening || '-'}</td>
+                          <td className="p-4">{item.uraian || '-'}</td>
+                          <td className="p-4 text-right font-mono">{formatIDR(item.paguSebelum)}</td>
+                          <td className="p-4 text-right font-mono">{formatIDR(item.paguSesudah)}</td>
+                          <td className={`p-4 text-right font-mono font-bold ${selisih >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            {formatIDR(selisih)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="p-8 text-center text-sm italic text-[#3c5654]/60 dark:text-[#cadfdf]/40">
+                        Tidak ada rincian SRO yang tersedia
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -546,41 +729,41 @@ const ProposalDetailView = ({
         </div>
 
         {/* Kolom Kanan - Interaksi & Log */}
-<div className="space-y-6">
-  {/* Chat Panel dengan Auto-scroll dan Real-time Update */}
-  <div className={`${glassCard} overflow-hidden h-[500px] flex flex-col group hover:-translate-y-1 transition-all duration-300`}>
-  <ChatPanel
-    comments={selectedProposal.comments || []}
-    currentUser={currentUserProfile}
-    onSendComment={(e) => {
-      e.preventDefault();
-      if (commentText.trim()) {
-        handleAddCommentLocal(selectedProposal.id, {
-          text: commentText.trim(),
-          sender: currentUserProfile.nama,
-          role: currentUserProfile.level,
-          timestamp: new Date().toISOString()
-        });
-        setCommentText(''); // Kosongkan input setelah kirim
-      }
-    }}
-    commentText={commentText}
-    setCommentText={setCommentText}
-    disabled={isTapd}
-    isDarkMode={isDarkMode}
-    colors={colors}
-  />
-</div>
+        <div className="space-y-6">
+          {/* Chat Panel dengan Auto-scroll dan Real-time Update */}
+          <div className={`${glassCard} overflow-hidden h-[500px] flex flex-col group hover:-translate-y-1 transition-all duration-300`}>
+            <ChatPanel
+              comments={selectedProposal.comments || []}
+              currentUser={currentUserProfile}
+              onSendComment={(e) => {
+                e.preventDefault();
+                if (commentText.trim()) {
+                  handleAddCommentLocal(selectedProposal.id, {
+                    text: commentText.trim(),
+                    sender: currentUserProfile.nama,
+                    role: currentUserProfile.level,
+                    timestamp: new Date().toISOString()
+                  });
+                }
+              }}
+              commentText={commentText}
+              setCommentText={setCommentText}
+              disabled={isTapd}
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+          </div>
 
-  {/* History Timeline */}
-  <div className={`${glassCard} overflow-hidden group hover:-translate-y-1 transition-all duration-300`}>
-    <HistoryTimeline 
-      history={selectedProposal.history || []} 
-      isDarkMode={isDarkMode}
-      colors={colors}
-    />
-  </div>
-</div>
+          {/* History Timeline */}
+          <div className={`${glassCard} overflow-hidden group hover:-translate-y-1 transition-all duration-300`}>
+            <HistoryTimeline 
+              history={selectedProposal.history || []} 
+              isDarkMode={isDarkMode}
+              colors={colors}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Modal History Versi */}
       {showVersionHistory && (
@@ -592,7 +775,6 @@ const ProposalDetailView = ({
           colors={colors}
         />
       )}
- </div>
 
       {/* Styles */}
       <style jsx>{`
